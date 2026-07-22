@@ -14060,16 +14060,16 @@ def _progress_bar(current, total, width=12):
 def _run_diagnostics():
     import os, shutil
     report = {
-        "bot_token":      bool(os.environ.get("BOT_TOKEN")),
-        "db_writable":    DB_FILE.parent.exists() and os.access(str(DB_FILE.parent), os.W_OK),
+        "bot_token": bool(os.environ.get("BOT_TOKEN")),
+        "db_writable": DB_FILE.parent.exists() and os.access(str(DB_FILE.parent), os.W_OK),
         "sandbox_exists": DIRS.get("sandboxes", BASE_DIR/"sandboxes").exists(),
-        "python_found":   bool(shutil.which("python3")),
-        "owner_set":      OWNER_ID > 0,
-        "threads_running":threading.active_count() > 3,
-        "uptime_secs":    int(time.time() - START_TIME),
-        "running_bots":   len(RUNNING),
+        "python_found": bool(shutil.which("python3")),
+        "owner_set": OWNER_ID > 0,
+        "threads_running": threading.active_count() > 3,
+        "uptime_secs": int(time.time() - START_TIME),
+        "running_bots": len(RUNNING),
     }
-    return report
+    return report  # ← Don't call _progress_bar here at all!
 
 
 # ─── Utility Helpers ────────────────────────────────────────────────────────
