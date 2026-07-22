@@ -3766,7 +3766,6 @@ def ack(call: types.CallbackQuery, text: str = "") -> None:
 _LOADING_STOPS: Dict[Tuple[int, int], "threading.Event"] = {}
 _LOADING_LOCK = threading.Lock()
 
-
 def _progress_bar(pct: int, width: int = 20) -> str:
     """`▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░ 70%` style bar."""
     pct = max(0, min(100, int(pct)))
@@ -3774,25 +3773,9 @@ def _progress_bar(pct: int, width: int = 20) -> str:
     return "▓" * filled + "░" * (width - filled) + f" {pct:>3}%"
 
 
-def _cancel_loading(chat_id: int, message_id: int) -> None:
-    """Stop any animation thread attached to this message."""
-    with _LOADING_LOCK:
-        evt = _LOADING_STOPS.pop((chat_id, message_id), None)
-    if evt:
-        evt.set()
-
-
 def loading(call: types.CallbackQuery, label: str = "Loading") -> None:
     """Show an animated progress bar (▓▓▓░░░ 45 %) the instant a slow
-    callback starts, so the user sees their tap was received.
-
-    The bar is rendered into the same message that triggered the
-    callback (caption-edit for photo menus, text-edit for plain
-    messages) and is then advanced by a daemon thread until the
-    handler finishes. The next show_menu / show_text call on that
-    message stops the animation automatically — handlers do not need
-    to call anything to clean up.
-    """
+    callback starts, so the user sees their tap was received."""
     if not (call and call.message):
         try:
             bot.answer_callback_query(call.id, text=f"⏳ {label}…")
@@ -3805,11 +3788,8 @@ def loading(call: types.CallbackQuery, label: str = "Loading") -> None:
     is_photo = call.message.content_type == "photo"
     label_safe = esc(label)
 
-    # Cancel any previous animation on this message before starting a
-    # new one (defensive — show_menu also cancels on re-render).
     _cancel_loading(chat_id, msg_id)
 
-    # Toast on the button itself.
     try:
         bot.answer_callback_query(call.id, text=f"↻ {label}…")
     except Exception:
@@ -3822,7 +3802,7 @@ def loading(call: types.CallbackQuery, label: str = "Loading") -> None:
         body = (
             f"<b>↻ {label_safe}…</b>\n"
             f"{G['div']}\n"
-            f"<code>{_progress_bar(pct)}</code>\n"
+            f"<code>{_progress_bar(pct, 20)}</code>\n"   # ← FIXED: added , 20
             f"<i>{sc('Please wait')}</i>{FOOTER}"
         )
         try:
@@ -3847,7 +3827,6 @@ def loading(call: types.CallbackQuery, label: str = "Loading") -> None:
         except Exception:
             return True
 
-    # Initial frame: visible feedback within ~1 telegram round-trip.
     _render(15)
 
     stop_evt = threading.Event()
@@ -3855,23 +3834,20 @@ def loading(call: types.CallbackQuery, label: str = "Loading") -> None:
         _LOADING_STOPS[(chat_id, msg_id)] = stop_evt
 
     def _animate() -> None:
-        # Advance from 15% → ~92% over a few seconds. We never reach
-        # 100% on our own — the handler completing and re-rendering is
-        # the real "done" signal.
         steps = [25, 38, 52, 65, 78, 88, 92]
         for pct in steps:
             if stop_evt.wait(0.7):
                 return
             if not _render(pct):
                 return
-        # Hold at 92% until cancelled.
         while not stop_evt.wait(1.5):
             pass
 
     threading.Thread(target=_animate, daemon=True).start()
 
 
-def admin_only_call(call: types.CallbackQuery, action: str = "view_stats") -> bool:
+           
+            def admin_only_call(call: types.CallbackQuery, action: str = "view_stats") -> bool:
     if not is_admin(call.from_user.id):
         ack(call, "Owner / admin only.")
         return False
