@@ -1,0 +1,58 @@
+{
+  "name": "premium-vps-hosting-bot",
+  "version": "2.1.0",
+  "description": "Premium VPS Hosting Telegram Bot - Host and manage bots with admin panel",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:logs": "pm2 logs",
+    "pm2:status": "pm2 status",
+    "pm2:delete": "pm2 delete ecosystem.config.js",
+    "pm2:monit": "pm2 monit",
+    "pm2:startup": "pm2 startup",
+    "pm2:save": "pm2 save"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0",
+    "sqlite3": "^5.1.7",
+    "express": "^4.18.2",
+    "adm-zip": "^0.5.10",
+    "axios": "^1.6.2",
+    "tar": "^6.2.0",
+    "node-schedule": "^2.1.1",
+    "dotenv": "^16.3.1",
+    "crypto": "^1.0.1",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "child_process": "^1.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "pm2": "^5.3.1"
+  },
+  "keywords": [
+    "telegram-bot",
+    "vps-hosting",
+    "bot-hosting",
+    "admin-panel",
+    "nodejs",
+    "pm2"
+  ],
+  "author": "Simran Hosting Bot",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/premium-vps-hosting-bot"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/premium-vps-hosting-bot/issues"
+  },
+  "homepage": "https://github.com/yourusername/premium-vps-hosting-bot#readme"
+}
