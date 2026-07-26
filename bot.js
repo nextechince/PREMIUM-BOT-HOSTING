@@ -977,7 +977,7 @@ function botActionsKb(botId, running, premium = false) {
     } else {
         kb.inline_keyboard.push([
             { text: `${G.play}  Start`, callback_data: `bot_start_${botId}`, style: 'sucess' },
-            { text: `${G.refresh}  Restart`, callback_data: `bot_restart_${botId}`, style: 'primary},
+            { text: `${G.refresh}  Restart`, callback_data: `bot_restart_${botId}`, style: 'primary' },
         ]);
     }
     kb.inline_keyboard.push([
