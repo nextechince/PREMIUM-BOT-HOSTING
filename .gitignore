@@ -1,0 +1,8 @@
+node_modules/
+.env
+logs/*.log
+backups/*.json
+deployed_bots/*
+websites/*
+.DS_Store
+.railway/
