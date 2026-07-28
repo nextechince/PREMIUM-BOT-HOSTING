@@ -75,7 +75,7 @@ function loadSettings() {
         rate_limit: 30,
         vercel_token: VERCEL_TOKEN,
         vercel_team_id: VERCEL_TEAM_ID,
-        force_join: false,
+        force_join: true,
         notify_admins_on_join: true,
         star_prices: { basic: 15, premium: 30, pro: 50 },
         plans: {
