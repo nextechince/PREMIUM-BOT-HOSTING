@@ -391,54 +391,78 @@ function runBotFile(filePath, userId, fileName, botType = 'telegram') {
 function getMainKeyboard(userId) {
     const isAdminUser = isAdmin(userId);
     const keyboard = [
-        [{ text: "📢 Updates", style: "primary" }, { text: "🤖 Deploy Bot", style: "sucess" }],
-        [{ text: "🌐 Deploy Website", style: "primary" }, { text: "📱 Deploy WhatsApp", style: "sucess" }],
-        [{ text: "📂 My Files", style: "primary "}, { text: "🌍 My Websites", style: "sucess" }],
-        [{ text: "💰 Points", style: "primary" }, { text: "⭐ Buy Plan", style: "sucess" }],
-        [{ text: "🔗 Referral", style: "primary" }, { text: "📊 Stats", style: "success" }],
-        [{ text: "📞 Support", style: "primary" }, { text: "🎫 Tickets" }],
-        [{ text: "💡 Free Trial" }, { text: "⚡ Quick Deploy", style: "sucess" }],
-        [{ text: "📦 Install Package", style: "primary" }, { text: "🔍 Bot Status", style: "sucess" }],
-        [{ text: "📁 Logs", style: "primary" }, { text: "🔄 Restart All", style: "sucess" }],
-        [{ text: "📱 Info", style: "primary" }, { text: "⚙️ Settings", style: "sucess" }],
-        [{ text: "🎯 Goals", style: "primary" }, { text: "🏆 Leaderboard", style: "sucess" }],
-        [{ text: "📋 Templates", style: "primary" }, { text: "🤖 AI Debugger", style: "sucess" }],
-        [{ text: "🛠 Tools", style: "primary" }, { text: "📈 Monitor", style: "primary" }]
+        [{ text: "📢 Updates" }, { text: "🤖 Deploy Bot" }],
+        [{ text: "🌐 Deploy Website" }, { text: "📱 Deploy WhatsApp" }],
+        [{ text: "📂 My Files" }, { text: "🌍 My Websites" }],
+        [{ text: "💰 Points" }, { text: "⭐ Buy Plan" }],
+        [{ text: "🔗 Referral" }, { text: "📊 Stats" }],
+        [{ text: "📞 Support" }, { text: "🎫 Tickets" }],
+        [{ text: "💡 Free Trial" }, { text: "⚡ Quick Deploy" }],
+        [{ text: "📦 Install Package" }, { text: "🔍 Bot Status" }],
+        [{ text: "📁 Logs" }, { text: "🔄 Restart All" }],
+        [{ text: "📱 Info" }, { text: "⚙️ Settings" }],
+        [{ text: "🎯 Goals" }, { text: "🏆 Leaderboard" }],
+        [{ text: "📋 Templates" }, { text: "🤖 AI Debugger" }],
+        [{ text: "🛠 Tools" }, { text: "📈 Monitor" }]
     ];
     
     if (isAdminUser) {
-        keyboard.push([{ text: "👑 Admin Panel", style: "danger" }]);
+        keyboard.push([{ text: "👑 Admin Panel" }]);
     }
     
     return { keyboard, resize_keyboard: true };
 }
 
+
 function getAdminKeyboard() {
     return {
         inline_keyboard: [
-            [{ text: "👤 Users", callback_data: "adm_users", style: "primary" }, { text: "📊 Stats", callback_data: "adm_stats", style: "sucess" }],
-            [{ text: "📢 Broadcast", callback_data: "adm_broadcast", style: "primary" }, { text: "💰 Give Points", callback_data: "adm_give_points", style: "primary" }],
-            [{ text: "🎫 Coupons", callback_data: "adm_coupons", style: "primary" }, { text: "👥 Admins", callback_data: "adm_admins", style: "sucess" }],
-            [{ text: "💾 Backup", callback_data: "adm_backup", style: "primary" }, { text: "🔧 Maintenance", callback_data: "adm_maintenance", style: "sucess" }],
-            [{ text: "🖼 Photos", callback_data: "adm_photos", style: "primary" }, { text: "📈 Analytics", callback_data: "adm_analytics", style: "sucess" }],
-            [{ text: "🤖 Bot Manager", callback_data: "adm_bot_manager", style: "primary" }, { text: "🔔 Notifications", callback_data: "adm_notifications", style: "sucess" }],
-            [{ text: "🚫 Ban", callback_data: "adm_ban", style: "danger" }, { text: "✅ Unban", callback_data: "adm_unban", style: "danger" }],
-            [{ text: "💰 Payments", callback_data: "adm_payments", style: "primary" }, { text: "✅ Approve Pay", callback_data: "adm_approve_pay", style: "sucess" }],
-            [{ text: "🎫 Tickets", callback_data: "adm_tickets", style: "primary" }, { text: "📋 Audit", callback_data: "adm_audit", style: "sucess" }],
-            [{ text: "🔒 Security", callback_data: "adm_security", style: "primary" }, { text: "⚙️ Settings", callback_data: "adm_settings", style: "sucess" }],
-            [{ text: "⏳ Pending", callback_data: "adm_pending", style: "primary" }, { text: "💾 Force Backup", callback_data: "adm_force_backup", style: "sucess" }],
-            [{ text: "🛠 User Tools", callback_data: "adm_user_tools", style: "primary" }, { text: "🔐 Sec Center", callback_data: "adm_sec_center", style: "sucess" }],
-            [{ text: "🔧 Sys Tools", callback_data: "adm_sys_tools", style: "primary" }, { text: "📊 Day Capita", callback_data: "adm_day_capita", style: "sucess" }],
-            [{ text: "🎨 Appearance", callback_data: "adm_appearance", style: "primary" }, { text: "📝 Templates", callback_data: "adm_templates", style: "sucess" }],
-            [{ text: "📤 Import/Export", callback_data: "adm_import_export", style: "primary" }, { text: "🌐 Webhooks", callback_data: "adm_webhooks", style: "sucess" }],
-            [{ text: "🚦 Rate Limits", callback_data: "adm_rate_limits", style: "primary" }, { text: "📈 Live Monitor", callback_data: "adm_live_monitor", style: "sucess" }],
-            [{ text: "🎯 Rev Goals", callback_data: "adm_rev_goals", style: "primary" }, { text: "⏰ Scheduler", callback_data: "adm_scheduler", style: "sucess" }],
-            [{ text: "🏆 Leaderboard", callback_data: "adm_leaderboard", style: "primary" }, { text: "🌍 Languages", callback_data: "adm_languages", style: "sucess" }],
-            [{ text: "🎮 Bot Controls", callback_data: "adm_bot_controls", style: "primary" }, { text: "📦 Subscriptions", callback_data: "adm_subscriptions", style: "sucess" }],
-            [{ text: "🔐 Admin 2FA", callback_data: "adm_2fa", style: "primary" }, { text: "🌐 Vercel Settings", callback_data: "adm_vercel", style: "sucess" }],
-            [{ text: "⭐ Manage Plans", callback_data: "adm_plans", style: "primary" }, { text: "📊 Global Points", callback_data: "adm_global_points", style: "primary" }],
-            [{ text: "🔧 Bot Types", callback_data: "adm_bot_types", style: "primary" }, { text: "📢 Force Join", callback_data: "adm_force_join", style: "primary" }],
-            [{ text: "📢 New User Notify", callback_data: "adm_notify_join", style: "primary" }, { text: "📊 Server Stats", callback_data: "adm_server_stats", style: "sucess" }],
+            [{ text: "👤 Users", callback_data: "adm_users", style: "primary" }, 
+             { text: "📊 Stats", callback_data: "adm_stats", style: "success" }],
+            [{ text: "📢 Broadcast", callback_data: "adm_broadcast", style: "primary" }, 
+             { text: "💰 Give Points", callback_data: "adm_give_points", style: "primary" }],
+            [{ text: "🎫 Coupons", callback_data: "adm_coupons", style: "primary" }, 
+             { text: "👥 Admins", callback_data: "adm_admins", style: "success" }],
+            [{ text: "💾 Backup", callback_data: "adm_backup", style: "primary" }, 
+             { text: "🔧 Maintenance", callback_data: "adm_maintenance", style: "success" }],
+            [{ text: "🖼 Photos", callback_data: "adm_photos", style: "primary" }, 
+             { text: "📈 Analytics", callback_data: "adm_analytics", style: "success" }],
+            [{ text: "🤖 Bot Manager", callback_data: "adm_bot_manager", style: "primary" }, 
+             { text: "🔔 Notifications", callback_data: "adm_notifications", style: "success" }],
+            [{ text: "🚫 Ban", callback_data: "adm_ban", style: "danger" }, 
+             { text: "✅ Unban", callback_data: "adm_unban", style: "danger" }],
+            [{ text: "💰 Payments", callback_data: "adm_payments", style: "primary" }, 
+             { text: "✅ Approve Pay", callback_data: "adm_approve_pay", style: "success" }],
+            [{ text: "🎫 Tickets", callback_data: "adm_tickets", style: "primary" }, 
+             { text: "📋 Audit", callback_data: "adm_audit", style: "success" }],
+            [{ text: "🔒 Security", callback_data: "adm_security", style: "primary" }, 
+             { text: "⚙️ Settings", callback_data: "adm_settings", style: "success" }],
+            [{ text: "⏳ Pending", callback_data: "adm_pending", style: "primary" }, 
+             { text: "💾 Force Backup", callback_data: "adm_force_backup", style: "success" }],
+            [{ text: "🛠 User Tools", callback_data: "adm_user_tools", style: "primary" }, 
+             { text: "🔐 Sec Center", callback_data: "adm_sec_center", style: "success" }],
+            [{ text: "🔧 Sys Tools", callback_data: "adm_sys_tools", style: "primary" }, 
+             { text: "📊 Day Capita", callback_data: "adm_day_capita", style: "success" }],
+            [{ text: "🎨 Appearance", callback_data: "adm_appearance", style: "primary" }, 
+             { text: "📝 Templates", callback_data: "adm_templates", style: "success" }],
+            [{ text: "📤 Import/Export", callback_data: "adm_import_export", style: "primary" }, 
+             { text: "🌐 Webhooks", callback_data: "adm_webhooks", style: "success" }],
+            [{ text: "🚦 Rate Limits", callback_data: "adm_rate_limits", style: "primary" }, 
+             { text: "📈 Live Monitor", callback_data: "adm_live_monitor", style: "success" }],
+            [{ text: "🎯 Rev Goals", callback_data: "adm_rev_goals", style: "primary" }, 
+             { text: "⏰ Scheduler", callback_data: "adm_scheduler", style: "success" }],
+            [{ text: "🏆 Leaderboard", callback_data: "adm_leaderboard", style: "primary" }, 
+             { text: "🌍 Languages", callback_data: "adm_languages", style: "success" }],
+            [{ text: "🎮 Bot Controls", callback_data: "adm_bot_controls", style: "primary" }, 
+             { text: "📦 Subscriptions", callback_data: "adm_subscriptions", style: "success" }],
+            [{ text: "🔐 Admin 2FA", callback_data: "adm_2fa", style: "primary" }, 
+             { text: "🌐 Vercel Settings", callback_data: "adm_vercel", style: "success" }],
+            [{ text: "⭐ Manage Plans", callback_data: "adm_plans", style: "primary" }, 
+             { text: "📊 Global Points", callback_data: "adm_global_points", style: "primary" }],
+            [{ text: "🔧 Bot Types", callback_data: "adm_bot_types", style: "primary" }, 
+             { text: "📢 Force Join", callback_data: "adm_force_join", style: "primary" }],
+            [{ text: "📢 New User Notify", callback_data: "adm_notify_join", style: "primary" }, 
+             { text: "📊 Server Stats", callback_data: "adm_server_stats", style: "success" }],
             [{ text: "🔄 Reset All", callback_data: "adm_reset_all", style: "danger" }]
         ]
     };
