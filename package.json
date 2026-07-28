@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node bot.js",
     "dev": "nodemon bot.js",
-    "railway": "node bot.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "railway": "node bot.js"
   },
   "keywords": [
     "telegram-bot",
@@ -29,11 +28,11 @@
     "adm-zip": "^0.5.10",
     "form-data": "^4.0.0",
     "uuid": "^9.0.1",
+    "dotenv": "^16.3.1",
     "fs": "^0.0.1-security",
     "path": "^0.12.7",
     "child_process": "^1.0.2",
-    "os": "^0.1.2",
-    "dotenv": "^16.3.1"
+    "os": "^0.1.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
@@ -41,13 +40,5 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/lonerterritory/premium-bot-hosting"
-  },
-  "bugs": {
-    "url": "https://github.com/lonerterritory/premium-bot-hosting/issues"
-  },
-  "homepage": "https://github.com/lonerterritory/premium-bot-hosting#readme"
+  }
 }
