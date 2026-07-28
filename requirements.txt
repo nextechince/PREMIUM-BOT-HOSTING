@@ -1,0 +1,13 @@
+# For Python bots
+requests==2.31.0
+python-telegram-bot==20.6
+pyrogram==2.0.106
+pytz==2023.3
+python-dotenv==1.0.0
+flask==3.0.0
+fastapi==0.104.1
+uvicorn==0.24.0
+aiohttp==3.9.1
+asyncio==3.4.3
+websockets==12.0
+python-socketio==5.9.0
