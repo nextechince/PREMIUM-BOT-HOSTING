@@ -1,50 +1,13 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm install",
-    "nixpacks": {
-      "pkgs": [
-        "python3",
-        "python3-pip",
-        "python3-dev",
-        "nodejs",
-        "npm",
-        "git",
-        "g++",
-        "make",
-        "curl"
-      ],
-      "installCmd": "npm install",
-      "setup": "mkdir -p deployed_bots logs backups websites"
-    }
+    "buildCommand": "npm install"
   },
   "deploy": {
-    "numReplicas": 1,
+    "startCommand": "node bot.js",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
-    "startCommand": "node bot.js",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 300,
-    "env": {
-      "NODE_ENV": "production",
-      "PYTHONUNBUFFERED": "1",
-      "NPM_CONFIG_PRODUCTION": "false",
-      "RAILWAY_ENVIRONMENT": "production"
-    }
-  },
-  "buildpacks": [
-    {
-      "id": "heroku/nodejs",
-      "version": "latest"
-    },
-    {
-      "id": "heroku/python",
-      "version": "latest"
-    }
-  ],
-  "persistent": {
-    "path": "/app/deployed_bots",
-    "size": "1GB"
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 600
   }
 }
