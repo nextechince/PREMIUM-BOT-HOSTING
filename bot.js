@@ -26,6 +26,35 @@ const VERCEL_TEAM_ID = 'team_ovNrPTbBV82txvRthHfeBLQZ';
 
 const bot = new TelegramBot(API_TOKEN, { polling: true });
 
+// --- SANITIZE FILENAME FUNCTION ---
+function sanitizeFileName(fileName) {
+    let sanitized = fileName.replace(/\s+/g, '_');
+    sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '');
+    return sanitized;
+}
+
+// --- CLEANUP ORPHANED FILES ON STARTUP ---
+function cleanupOrphanedFiles() {
+    if (!fs.existsSync(DEPLOY_DIR)) return;
+    const files = fs.readdirSync(DEPLOY_DIR);
+    let count = 0;
+    for (const file of files) {
+        if (file.includes('temp_') || file.includes('BQAC') || file.startsWith('BQAC') || file.includes('file_')) {
+            try {
+                const filePath = path.join(DEPLOY_DIR, file);
+                if (fs.lstatSync(filePath).isDirectory()) {
+                    fs.rmSync(filePath, { recursive: true, force: true });
+                } else {
+                    fs.unlinkSync(filePath);
+                }
+                count++;
+            } catch(e) {}
+        }
+    }
+    if (count > 0) console.log(`🧹 Cleaned up ${count} orphaned files`);
+}
+cleanupOrphanedFiles();
+
 // FILES WILL BE SAVED AROUND HERE 🙃
 const DB_FILE = path.join(__dirname, "users_data.json");
 const SETTINGS_FILE = path.join(__dirname, "bot_settings.json");
@@ -1330,8 +1359,15 @@ async function processDeploy(msg, botType = 'telegram') {
     const userId = msg.from.id.toString();
     const chatId = msg.chat.id;
     const user = users_db[userId];
-    const fileName = msg.document.file_name;
-    const filePath = path.join(DEPLOY_DIR, `${userId}_${fileName}`);
+    const fileId = msg.document.file_id;
+    const originalFileName = msg.document.file_name;
+    
+    // --- Sanitize filename ---
+    let fileName = originalFileName.replace(/\s+/g, '_');
+    fileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '');
+    
+    const finalFileName = `${userId}_${fileName}`;
+    const filePath = path.join(DEPLOY_DIR, finalFileName);
 
     let cost = botType === 'telegram' ? settings.bot_cost : 
                botType === 'whatsapp' ? settings.whatsapp_cost : 
@@ -1348,23 +1384,64 @@ async function processDeploy(msg, botType = 'telegram') {
     const statusMsg = await bot.sendMessage(chatId, "⏳ <b>Deploying...</b>", { parse_mode: 'HTML' });
 
     try {
-        await bot.downloadFile(msg.document.file_id, DEPLOY_DIR);
-        fs.renameSync(path.join(DEPLOY_DIR, msg.document.file_id), filePath);
+        // --- DOWNLOAD THE FILE ---
+        // Get file info from Telegram
+        const fileInfo = await bot.getFile(fileId);
+        const fileUrl = `https://api.telegram.org/file/bot${API_TOKEN}/${fileInfo.file_path}`;
+        
+        // Download using axios
+        const response = await axios({
+            method: 'get',
+            url: fileUrl,
+            responseType: 'stream'
+        });
 
+        // Save the file
+        const writer = fs.createWriteStream(filePath);
+        response.data.pipe(writer);
+
+        await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+
+        console.log(`✅ File downloaded: ${fileName}`);
+
+        // --- Handle ZIP files ---
         if (fileName.endsWith('.zip')) {
             const extractDir = path.join(DEPLOY_DIR, `${userId}_${fileName.replace('.zip', '')}`);
+            if (fs.existsSync(extractDir)) {
+                fs.rmSync(extractDir, { recursive: true, force: true });
+            }
+            fs.mkdirSync(extractDir, { recursive: true });
+            
             const zip = new AdmZip(filePath);
             zip.extractAllTo(extractDir, true);
-            fs.unlinkSync(filePath);
+            try { fs.unlinkSync(filePath); } catch(e) {}
             
-            const files = fs.readdirSync(extractDir);
-            const mainFile = files.find(f => f.endsWith('.py') || f.endsWith('.js') || f.endsWith('.sh'));
+            const extractedFiles = fs.readdirSync(extractDir);
+            let mainFile = extractedFiles.find(f => f.endsWith('.py') || f.endsWith('.js') || f.endsWith('.sh') || f.endsWith('.rb'));
+            
+            if (!mainFile) {
+                for (const item of extractedFiles) {
+                    const itemPath = path.join(extractDir, item);
+                    if (fs.lstatSync(itemPath).isDirectory()) {
+                        const subFiles = fs.readdirSync(itemPath);
+                        const found = subFiles.find(f => f.endsWith('.py') || f.endsWith('.js') || f.endsWith('.sh'));
+                        if (found) {
+                            mainFile = path.join(item, found);
+                            break;
+                        }
+                    }
+                }
+            }
+            
             if (mainFile) {
-                const newPath = path.join(extractDir, mainFile);
-                await detectAndInstallDependencies(newPath, mainFile, userId);
-                const detectedType = detectBotType(newPath, mainFile);
+                const mainFilePath = path.join(extractDir, mainFile);
+                await detectAndInstallDependencies(mainFilePath, mainFile, userId);
+                const detectedType = detectBotType(mainFilePath, mainFile);
                 
-                if (runBotFile(newPath, parseInt(userId), mainFile, detectedType)) {
+                if (runBotFile(mainFilePath, parseInt(userId), mainFile, detectedType)) {
                     user.points -= cost;
                     user.files.push(mainFile);
                     saveDB();
@@ -1374,14 +1451,17 @@ async function processDeploy(msg, botType = 'telegram') {
                         { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: 'HTML' }
                     );
                     
-                    const announceMsg = `<blockquote>🚀 <b>NEW ${detectedType.toUpperCase()} ʙᴏᴛ ᴅᴇᴘʟᴏʏᴇᴅ</b>\n\n👤 User: <code>${userId}</code>\n🤖 ʙᴏᴛ: <code>${mainFile}</code>\n📱 ᴛʏᴘᴇ: ${detectedType}\n⏰ ᴛɪᴍᴇ: ${new Date().toLocaleString()}</blockquote>`;
+                    const announceMsg = `🚀 <b>NEW ${detectedType.toUpperCase()} BOT DEPLOYED</b>\n\n👤 User: <code>${userId}</code>\n🤖 Bot: <code>${mainFile}</code>\n📱 Type: ${detectedType}\n⏰ Time: ${new Date().toLocaleString()}`;
                     bot.sendMessage(ANNOUNCE_CHANNEL, announceMsg, { parse_mode: 'HTML' }).catch(() => {});
-                    notifyAdmins(`<blockquote🤖 <b>ʙᴏᴛ ᴅᴇᴘʟᴏʏᴇᴅ</b>\n\n👤 ᴜsᴇʀ: <code>${userId}</code>\n📄 ғɪʟᴇ: ${mainFile}\n📱 ᴛʏᴘᴇ: ${detectedType}`);
+                    notifyAdmins(`🤖 <b>Bot Deployed</b>\n\n👤 User: <code>${userId}</code>\n📄 File: ${mainFile}\n📱 Type: ${detectedType}`);
                 }
+            } else {
+                throw new Error('No executable file found in ZIP');
             }
             return;
         }
 
+        // --- Handle regular files ---
         await detectAndInstallDependencies(filePath, fileName, userId);
         const detectedType = detectBotType(filePath, fileName);
 
@@ -1391,7 +1471,7 @@ async function processDeploy(msg, botType = 'telegram') {
             saveDB();
             logAction(userId, 'DEPLOY', `File: ${fileName}, Type: ${detectedType}`);
             await bot.editMessageText(
-                `🚀 <b>ᴅᴇᴘʟᴏʏ sᴜᴄᴄᴇss</b>\n<code>${fileName}</code>\n📱 ᴛʏᴘᴇ: ${detectedType}\n💰 ʀᴇᴍᴀɪɴɪɴɢ: ${user.points} points`,
+                `🚀 <b>Deploy Success</b>\n<code>${fileName}</code>\n📱 Type: ${detectedType}\n💰 Remaining: ${user.points} points`,
                 { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: 'HTML' }
             );
             
@@ -1404,13 +1484,15 @@ async function processDeploy(msg, botType = 'telegram') {
                 { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: 'HTML' }
             );
         }
+        
     } catch (err) {
+        console.error('Deploy Error:', err);
         await bot.editMessageText(
-            `❌ <b>Error</b>\n<code>${err.message}</code>`,
+            `❌ <b>Error</b>\n<code>${err.message}</code>\n\nPlease try again.`,
             { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: 'HTML' }
         );
     }
-}
+                }
 
 // --- WEBSITE DEPLOY ---
 async function processWebsiteDeploy(msg) {
