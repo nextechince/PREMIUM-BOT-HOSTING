@@ -998,7 +998,7 @@ ${msgText}
             delete userSessions[uid];
             
             if (isNaN(cost) || cost < 0) {
-                return bot.sendMessage(message.chat.id, formatText('❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ.''), { parse_mode: 'HTML' });
+                return bot.sendMessage(message.chat.id, formatText('❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ.'), { parse_mode: 'HTML' });
             }
             
             settings.hosting_cost = cost;
