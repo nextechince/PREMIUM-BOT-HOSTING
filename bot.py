@@ -1634,9 +1634,8 @@ def show_menu(
 
     # Any in-flight loading animation on this message is now stale —
     # we are about to overwrite the message with the real menu.
-    if call and call.message:
+   if call and call.message:
     # _cancel_loading removed - no progress bar
-    pass
 
     # ── 1. Try in-place edits when the previous message is a photo ──
     if call and call.message and call.message.content_type == "photo":
