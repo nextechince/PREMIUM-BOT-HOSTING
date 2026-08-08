@@ -1751,6 +1751,7 @@ def show_text(
  if call and call.message:
     # _cancel_loading removed - no progress bar
      pass
+     
     if call and call.message and call.message.content_type == "text":
         try:
             bot.edit_message_text(
