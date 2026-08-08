@@ -1619,7 +1619,6 @@ def _html_safe_truncate(s: str, limit: int = 1024) -> str:
     closes = "".join(f"</{t}>" for t in reversed(stack))
     return cut + "…" + closes
 
-
 def show_menu(
     chat_id: int,
     photo_url: str,
@@ -1634,8 +1633,9 @@ def show_menu(
 
     # Any in-flight loading animation on this message is now stale —
     # we are about to overwrite the message with the real menu.
-   if call and call.message:
-    # _cancel_loading removed - no progress bar
+    if call and call.message:
+        # _cancel_loading removed - no progress bar
+        pass
 
     # ── 1. Try in-place edits when the previous message is a photo ──
     if call and call.message and call.message.content_type == "photo":
@@ -1750,6 +1750,7 @@ def show_text(
 
  if call and call.message:
     # _cancel_loading removed - no progress bar
+     pass
     if call and call.message and call.message.content_type == "text":
         try:
             bot.edit_message_text(
