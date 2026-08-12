@@ -146,7 +146,7 @@ function getServerLogs(serverId) {
     const logFile = path.join(__dirname, 'servers', serverId, 'logs.txt');
     if (!fs.existsSync(logFile)) {
         return [{ time: new Date().toLocaleTimeString(), type: 'info', msg: '🟢 Server created' }];
-    }
+    } 
 
     const content = fs.readFileSync(logFile, 'utf8');
     const lines = content.split('\n').filter(l => l.trim());
@@ -385,6 +385,31 @@ app.post('/api/server/stop', (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// Create server from dashboard
+app.post('/api/server/create', async (req, res) => {
+    const { userId, name, type } = req.body;
+    
+    const user = db.getUser(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (user.servers.length >= config.maxServers) {
+        return res.status(400).json({ error: 'Server limit reached' });
+    }
+    
+    if (user.points < config.pointsPerServer) {
+        return res.status(400).json({ error: 'Insufficient points' });
+    }
+    
+    db.addPoints(userId, -config.pointsPerServer);
+    const serverId = db.addServer(userId, { name, type });
+    
+    if (!serverId) {
+        return res.status(500).json({ error: 'Failed to create server' });
+    }
+    
+    res.json({ success: true, serverId });
 });
 
 // Restart server
