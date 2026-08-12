@@ -49,16 +49,13 @@ app.use(express.static('public'));
 const userStates = {};
 
 // ============================================
-// FORCE JOIN MIDDLEWARE - FIXED
+// FORCE JOIN MIDDLEWARE
 // ============================================
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     
-    // Skip for admins
     if (config.adminIds.includes(userId)) return;
-    
-    // Check if user is banned
     if (db.isBanned(userId)) {
         return bot.sendMessage(chatId, 
             `<blockquote>❌ <b>${toSmallCaps('you are banned from using this bot')}</b></blockquote>`,
@@ -66,43 +63,26 @@ bot.on('message', async (msg) => {
         );
     }
     
-    // Check force join channels
     const channels = db.getForceChannels();
-    if (channels.length > 0) {
-        let needToJoin = false;
-        let channelToJoin = '';
-        
-        for (const channel of channels) {
-            try {
-                const member = await bot.getChatMember(channel, userId);
-                if (member.status === 'left' || member.status === 'kicked') {
-                    needToJoin = true;
-                    channelToJoin = channel;
-                    break;
-                }
-            } catch (error) {
-                // If can't get member, assume they need to join
-                needToJoin = true;
-                channelToJoin = channel;
-                break;
-            }
-        }
-        
-        if (needToJoin) {
-            return bot.sendMessage(chatId,
-                `<blockquote>⚠️ <b>${toSmallCaps('please join our channel first')}</b>\n\n` +
-                `${toSmallCaps('you must join')} <b>${channelToJoin}</b> ${toSmallCaps('to use this bot')}</blockquote>`,
-                {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: `📢 ${toSmallCaps('join channel')}`, url: `https://t.me/${channelToJoin.replace('@', '')}`, style: 'primary' }],
-                            [{ text: `✅ ${toSmallCaps('check again')}`, callback_data: 'check_join', style: 'success' }]
-                        ]
+    for (const channel of channels) {
+        try {
+            const member = await bot.getChatMember(channel, userId);
+            if (member.status === 'left' || member.status === 'kicked') {
+                return bot.sendMessage(chatId,
+                    `<blockquote>⚠️ <b>${toSmallCaps('please join our channel first')}</b>\n\n` +
+                    `${toSmallCaps('you must join')} <b>${channel}</b> ${toSmallCaps('to use this bot')}</blockquote>`,
+                    {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{ text: `📢 ${toSmallCaps('join channel')}`, url: `https://t.me/${channel.replace('@', '')}`, style: 'primary' }],
+                                [{ text: `✅ ${toSmallCaps('check again')}`, callback_data: 'check_join', style: 'success' }]
+                            ]
+                        }
                     }
-                }
-            );
-        }
+                );
+            }
+        } catch (error) {}
     }
 });
 
@@ -113,38 +93,6 @@ bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     const username = msg.from.username;
-    
-    // Check force join first
-    const channels = db.getForceChannels();
-    if (channels.length > 0 && !config.adminIds.includes(userId)) {
-        let needToJoin = false;
-        let channelToJoin = '';
-        for (const channel of channels) {
-            try {
-                const member = await bot.getChatMember(channel, userId);
-                if (member.status === 'left' || member.status === 'kicked') {
-                    needToJoin = true;
-                    channelToJoin = channel;
-                    break;
-                }
-            } catch { needToJoin = true; channelToJoin = channel; break; }
-        }
-        if (needToJoin) {
-            return bot.sendMessage(chatId,
-                `<blockquote>⚠️ <b>${toSmallCaps('please join our channel first')}</b>\n\n` +
-                `${toSmallCaps('you must join')} <b>${channelToJoin}</b> ${toSmallCaps('to use this bot')}</blockquote>`,
-                {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: `📢 ${toSmallCaps('join channel')}`, url: `https://t.me/${channelToJoin.replace('@', '')}`, style: 'primary' }],
-                            [{ text: `✅ ${toSmallCaps('check again')}`, callback_data: 'check_join', style: 'success' }]
-                        ]
-                    }
-                }
-            );
-        }
-    }
     
     let user = db.getUser(userId);
     if (!user) {
@@ -168,12 +116,10 @@ bot.onText(/\/start/, async (msg) => {
         }
     }
     
-    // Show admin panel if admin
     if (config.adminIds.includes(userId)) {
         return showAdminPanel(chatId);
     }
     
-    // USER MENU - All buttons with proper styles
     const canClaimDaily = (Date.now() - (user.lastDaily || 0)) > 86400000;
     
     bot.sendMessage(chatId,
@@ -226,7 +172,7 @@ async function showAdminPanel(chatId) {
 }
 
 // ============================================
-// ADMIN SUB-MENUS
+// ADMIN USER MANAGEMENT
 // ============================================
 async function showAdminUsers(chatId, messageId) {
     await bot.editMessageText(
@@ -251,6 +197,9 @@ async function showAdminUsers(chatId, messageId) {
     );
 }
 
+// ============================================
+// ADMIN SERVER MANAGEMENT
+// ============================================
 async function showAdminServers(chatId, messageId) {
     await bot.editMessageText(
         `<blockquote>🖥️ <b>${toSmallCaps('server management')}</b>\n\n` +
@@ -273,6 +222,9 @@ async function showAdminServers(chatId, messageId) {
     );
 }
 
+// ============================================
+// ADMIN BROADCAST
+// ============================================
 async function showAdminBroadcast(chatId, messageId) {
     await bot.editMessageText(
         `<blockquote>📢 <b>${toSmallCaps('broadcast & announce')}</b>\n\n` +
@@ -292,6 +244,9 @@ async function showAdminBroadcast(chatId, messageId) {
     );
 }
 
+// ============================================
+// ADMIN PROMO CODES
+// ============================================
 async function showAdminPromos(chatId, messageId) {
     await bot.editMessageText(
         `<blockquote>🎟️ <b>${toSmallCaps('promo code management')}</b>\n\n` +
@@ -312,6 +267,9 @@ async function showAdminPromos(chatId, messageId) {
     );
 }
 
+// ============================================
+// ADMIN SETTINGS
+// ============================================
 async function showAdminSettings(chatId, messageId) {
     await bot.editMessageText(
         `<blockquote>⚙️ <b>${toSmallCaps('bot settings')}</b>\n\n` +
@@ -343,6 +301,9 @@ async function showAdminSettings(chatId, messageId) {
     );
 }
 
+// ============================================
+// ADMIN CHANNELS
+// ============================================
 async function showAdminChannels(chatId, messageId) {
     const channels = db.getForceChannels();
     let message = `<blockquote>📢 <b>${toSmallCaps('force join channels')}</b>\n\n`;
@@ -370,6 +331,9 @@ async function showAdminChannels(chatId, messageId) {
     });
 }
 
+// ============================================
+// ADMIN TICKETS
+// ============================================
 async function showAdminTickets(chatId, messageId) {
     const tickets = db.getAllTickets();
     if (tickets.length === 0) {
@@ -407,12 +371,16 @@ async function showAdminTickets(chatId, messageId) {
         reply_markup: {
             inline_keyboard: [
                 [{ text: `✅ ${toSmallCaps('resolve ticket')}`, callback_data: 'admin_resolveticket', style: 'success' }],
+                [{ text: `💬 ${toSmallCaps('reply to ticket')}`, callback_data: 'admin_replyticket', style: 'primary' }],
                 [{ text: `🔙 ${toSmallCaps('back to admin')}`, callback_data: 'admin_back', style: 'danger' }]
             ]
         }
     });
 }
 
+// ============================================
+// ADMIN STATS
+// ============================================
 async function showAdminStats(chatId, messageId) {
     const totalUsers = db.getTotalUsers();
     const totalServers = db.getTotalServers();
@@ -447,7 +415,7 @@ async function showAdminStats(chatId, messageId) {
 }
 
 // ============================================
-// CALLBACK QUERY HANDLER - ALL BUTTONS WORKING
+// CALLBACK QUERY HANDLER
 // ============================================
 bot.on('callback_query', async (callbackQuery) => {
     const action = callbackQuery.data;
@@ -1008,7 +976,7 @@ bot.on('callback_query', async (callbackQuery) => {
     }
     
     // ============================================
-    // SERVER ACTIONS (server_*, start_*, stop_*, etc)
+    // SERVER ACTIONS
     // ============================================
     if (action.startsWith('server_')) {
         const serverId = action.replace('server_', '');
@@ -1793,6 +1761,30 @@ bot.on('callback_query', async (callbackQuery) => {
         return;
     }
     
+    // ============================================
+    // ADMIN TICKET REPLY
+    // ============================================
+    if (action === 'admin_replyticket') {
+        if (!isAdmin) return;
+        userStates[userId] = { action: 'replyticket' };
+        await bot.editMessageText(
+            `<blockquote>💬 <b>${toSmallCaps('reply to ticket')}</b>\n\n` +
+            `${toSmallCaps('send')}: TICKET_ID your reply\n\n` +
+            `${toSmallCaps('example')}: TICKET123 Thank you for your report, we are looking into it</blockquote>`,
+            {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: `🔙 ${toSmallCaps('back')}`, callback_data: 'admin_tickets', style: 'danger' }]
+                    ]
+                }
+            }
+        );
+        return;
+    }
+    
     if (action === 'admin_resolveticket') {
         if (!isAdmin) return;
         userStates[userId] = { action: 'resolveticket' };
@@ -1836,6 +1828,73 @@ bot.on('message', async (msg) => {
     const state = userStates[userId] || {};
     
     // ============================================
+    // HANDLE ADMIN TICKET REPLY
+    // ============================================
+    if (state.action === 'replyticket' && config.adminIds.includes(userId)) {
+        const parts = text.split(' ');
+        if (parts.length < 2) {
+            return bot.sendMessage(chatId,
+                `<blockquote>❌ <b>${toSmallCaps('invalid format')}</b>\n\n` +
+                `${toSmallCaps('use')}: TICKET_ID your reply</blockquote>`,
+                { parse_mode: 'HTML' }
+            );
+        }
+        
+        const ticketId = parts[0].toUpperCase();
+        const reply = parts.slice(1).join(' ');
+        
+        const ticket = db.data.tickets[ticketId];
+        if (!ticket) {
+            return bot.sendMessage(chatId,
+                `<blockquote>❌ <b>${toSmallCaps('ticket not found')}</b></blockquote>`,
+                { parse_mode: 'HTML' }
+            );
+        }
+        
+        // Add reply to ticket
+        if (!ticket.replies) ticket.replies = [];
+        ticket.replies.push({
+            from: 'admin',
+            message: reply,
+            time: Date.now()
+        });
+        db.saveAll();
+        
+        // Send reply to user
+        await bot.sendMessage(ticket.userId,
+            `<blockquote>💬 <b>${toSmallCaps('support reply')}</b>\n\n` +
+            `🆔 ${toSmallCaps('ticket')}: ${ticketId}\n\n` +
+            `${reply}\n\n` +
+            `${toSmallCaps('reply from admin')}</blockquote>`,
+            {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: `📋 ${toSmallCaps('my tickets')}`, callback_data: 'my_tickets', style: 'primary' }]
+                    ]
+                }
+            }
+        );
+        
+        await bot.sendMessage(chatId,
+            `<blockquote>✅ <b>${toSmallCaps('reply sent successfully')}</b>\n\n` +
+            `🆔 ${toSmallCaps('ticket')}: ${ticketId}\n` +
+            `👤 ${toSmallCaps('user')}: @${db.getUser(ticket.userId)?.username || 'Unknown'}</blockquote>`,
+            {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: `🔙 ${toSmallCaps('back to tickets')}`, callback_data: 'admin_tickets', style: 'primary' }]
+                    ]
+                }
+            }
+        );
+        
+        delete userStates[userId].action;
+        return;
+    }
+    
+    // ============================================
     // HANDLE SERVER CREATION
     // ============================================
     if (state.serverType) {
@@ -1874,41 +1933,50 @@ bot.on('message', async (msg) => {
             );
         }
         
-        await bot.sendMessage(chatId,
-            `<blockquote>🎉 <b>${toSmallCaps('server created successfully')}</b>\n\n` +
+        // SUCCESS MESSAGE WITH ANNOUNCE CHANNEL
+        const successMsg = `<blockquote>🎉 <b>${toSmallCaps('server created successfully')}</b>\n\n` +
             `✅ ${toSmallCaps('name')}: <b>${serverName}</b>\n` +
             `🆔 ${toSmallCaps('id')}: <code>${serverId}</code>\n` +
             `📦 ${toSmallCaps('type')}: ${state.serverType.toUpperCase()}\n` +
             `💎 ${toSmallCaps('points used')}: ${config.pointsPerServer}\n` +
             `📊 ${toSmallCaps('remaining points')}: ${db.getUser(userId).points}\n\n` +
-            `${toSmallCaps('manage your server using the buttons below')}</blockquote>`,
-            {
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: `🖥️ ${toSmallCaps('view server')}`, callback_data: `server_${serverId}`, style: 'primary' }, 
-                         { text: `🌐 ${toSmallCaps('dashboard')}`, callback_data: 'open_dashboard', style: 'success' }],
-                        [{ text: `📋 ${toSmallCaps('my servers')}`, callback_data: 'my_servers', style: 'primary' }]
-                    ]
-                }
-            }
-        );
+            `${toSmallCaps('manage your server using the buttons below')}</blockquote>`;
         
-        await bot.sendMessage(config.announceChannel,
-            `<blockquote>🆕 <b>${toSmallCaps('new server created')}</b>\n\n` +
-            `👤 ${toSmallCaps('user')}: @${msg.from.username || 'Unknown'}\n` +
-            `🖥️ ${toSmallCaps('server')}: ${serverName}\n` +
-            `📦 ${toSmallCaps('type')}: ${state.serverType.toUpperCase()}\n` +
-            `🆔 ${toSmallCaps('id')}: <code>${serverId}</code></blockquote>`,
-            {
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: `🚀 ${toSmallCaps('grab slot')}`, url: `https://t.me/${config.botUsername.replace('@', '')}`, style: 'primary' }]
-                    ]
-                }
+        await bot.sendMessage(chatId, successMsg, {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: `🖥️ ${toSmallCaps('view server')}`, callback_data: `server_${serverId}`, style: 'primary' }, 
+                     { text: `🌐 ${toSmallCaps('dashboard')}`, callback_data: 'open_dashboard', style: 'success' }],
+                    [{ text: `📋 ${toSmallCaps('my servers')}`, callback_data: 'my_servers', style: 'primary' }]
+                ]
             }
-        );
+        });
+        
+        // SEND TO ANNOUNCE CHANNEL
+        try {
+            await bot.sendMessage(config.announceChannel,
+                `<blockquote>🆕 <b>${toSmallCaps('new server created')}</b>\n\n` +
+                `👤 ${toSmallCaps('user')}: @${msg.from.username || 'Unknown'}\n` +
+                `🖥️ ${toSmallCaps('server')}: ${serverName}\n` +
+                `📦 ${toSmallCaps('type')}: ${state.serverType.toUpperCase()}\n` +
+                `🆔 ${toSmallCaps('id')}: <code>${serverId}</code>\n\n` +
+                `🌐 ${toSmallCaps('dashboard')}: ${config.webUrl}/dashboard/${userId}`,
+                {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: `🚀 ${toSmallCaps('grab slot')}`, url: `https://t.me/${config.botUsername.replace('@', '')}`, style: 'primary' }],
+                            [{ text: `🌐 ${toSmallCaps('view dashboard')}`, url: `${config.webUrl}/dashboard/${userId}`, style: 'success' }]
+                        ]
+                    }
+                }
+            );
+            console.log(`✅ Announcement sent to ${config.announceChannel}`);
+        } catch (error) {
+            console.error('❌ Failed to send announcement:', error.message);
+        }
+        
         return;
     }
     
@@ -2686,44 +2754,4 @@ console.log(`🌐 Web URL: ${config.webUrl}`);
 console.log(`👥 Admin IDs: ${config.adminIds.join(', ')}`);
 console.log(`💎 Points per server: ${config.pointsPerServer}`);
 console.log(`📊 Max servers: ${config.maxServers}`);
-
-// ============================================
-// 30+ ADMIN COMMANDS LIST
-// ============================================
-console.log('\n📋 ADMIN COMMANDS (30+):');
-console.log('1.  Add Points');
-console.log('2.  Remove Points');
-console.log('3.  Ban User');
-console.log('4.  Unban User');
-console.log('5.  View Users');
-console.log('6.  Global Points');
-console.log('7.  View Servers');
-console.log('8.  Delete Server');
-console.log('9.  Start Server');
-console.log('10. Stop Server');
-console.log('11. Restart Server');
-console.log('12. Broadcast');
-console.log('13. Announce');
-console.log('14. Create Promo');
-console.log('15. Remove Promo');
-console.log('16. View Promos');
-console.log('17. Set Points Per Server');
-console.log('18. Set Max Servers');
-console.log('19. Set Referral Bonus');
-console.log('20. Set Daily Bonus');
-console.log('21. Set Web URL');
-console.log('22. Maintenance Mode');
-console.log('23. Add Channel');
-console.log('24. Remove Channel');
-console.log('25. View Channels');
-console.log('26. View Tickets');
-console.log('27. Resolve Ticket');
-console.log('28. View Statistics');
-console.log('29. Back to Admin');
-console.log('30. Reply Ticket');
-console.log('31. View Banned Users');
-console.log('32. Clear Logs');
-console.log('33. Set Points Limit');
-console.log('34. Add Group');
-console.log('35. Remove Group');
-console.log('36. View Groups');
+console.log(`📢 Announce Channel: ${config.announceChannel}`);
