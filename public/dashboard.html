@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🌹 Premium Hosting Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0f3460 100%);
+            padding: 20px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        .logo-text {
+            font-size: 1.2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.04);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .user-badge .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4d96ff, #6c5ce7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+            font-size: 0.8em;
+        }
+
+        .points-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,217,61,0.08);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,217,61,0.15);
+            color: #ffd93d;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: rgba(77,150,255,0.08);
+            border: 1px solid rgba(77,150,255,0.15);
+            color: #4d96ff;
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(77,150,255,0.15);
+            transform: rotate(180deg);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .stat-value.cpu { color: #4d96ff; }
+        .stat-value.ram { color: #6bcb77; }
+        .stat-value.disk { color: #ffd93d; }
+        .stat-value.servers { color: #ff6b6b; }
+        .stat-value.points { color: #a29bfe; }
+
+        .stat-label {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        /* Main Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+
+        /* Server List */
+        .servers-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .section-title {
+            color: #fff;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4d96ff, #6c5ce7);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(77,150,255,0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 35px rgba(77,150,255,0.4);
+        }
+
+        .btn-success {
+            background: #6bcb77;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(107,203,119,0.3);
+        }
+
+        .btn-success:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(255,107,107,0.3);
+        }
+
+        .btn-danger:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-warning {
+            background: #ffd93d;
+            color: #1a1a2e;
+            box-shadow: 0 4px 20px rgba(255,217,61,0.3);
+        }
+
+        .btn-warning:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.05);
+        }
+
+        .servers-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .servers-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .servers-scroll::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+        }
+
+        .servers-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .server-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .server-item:hover {
+            background: rgba(255,255,255,0.06);
+            transform: translateX(5px);
+            border-color: rgba(255,255,255,0.05);
+        }
+
+        .server-item.active {
+            border-color: #4d96ff;
+            background: rgba(77,150,255,0.08);
+            box-shadow: 0 0 30px rgba(77,150,255,0.1);
+        }
+
+        .server-item-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .server-item-details {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.7em;
+        }
+
+        .server-status-badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.6em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-running {
+            background: rgba(107,203,119,0.15);
+            color: #6bcb77;
+            border: 1px solid rgba(107,203,119,0.2);
+        }
+
+        .badge-stopped {
+            background: rgba(255,107,107,0.1);
+            color: #ff6b6b;
+            border: 1px solid rgba(255,107,107,0.15);
+        }
+
+        /* Server View */
+        .server-view {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.05);
+            min-height: 500px;
+        }
+
+        .server-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .server-view-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .server-view-title .name {
+            color: #fff;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .server-view-title .status {
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
+
+        .status.running {
+            color: #6bcb77;
+            background: rgba(107,203,119,0.1);
+            border: 1px solid rgba(107,203,119,0.2);
+        }
+
+        .status.stopped {
+            color: #ff6b6b;
+            background: rgba(255,107,107,0.1);
+            border: 1px solid rgba(255,107,107,0.15);
+        }
+
+        .server-view-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 2px;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 12px 12px 0 0;
+            background: transparent;
+            color: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.03);
+        }
+
+        .tab-btn.active {
+            color: #4d96ff;
+            background: rgba(77,150,255,0.05);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            display: block;
+            margin-top: 2px;
+            height: 2px;
+            background: linear-gradient(90deg, #4d96ff, #6c5ce7);
+            border-radius: 10px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeTab 0.3s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeTab {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Info Tab */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 14px 16px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .info-item .label {
+            color: rgba(255,255,255,0.3);
+            font-size: 0.65em;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .info-item .value {
+            color: #fff;
+            font-size: 1em;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Console Tab */
+        .console-container {
+            background: rgba(0,0,0,0.5);
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 320px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .console-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .console-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+        }
+
+        .console-container::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+        }
+
+        .console-line {
+            color: rgba(255,255,255,0.7);
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            font-size: 0.85em;
+        }
+
+        .console-line .time {
+            color: rgba(255,255,255,0.2);
+            margin-right: 12px;
+        }
+
+        .console-line .log-success { color: #6bcb77; }
+        .console-line .log-error { color: #ff6b6b; }
+        .console-line .log-info { color: #4d96ff; }
+        .console-line .log-warning { color: #ffd93d; }
+
+        /* Files Tab */
+        .file-manager {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 12px;
+            max-height: 320px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .file-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .file-item .name {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-item .size {
+            color: rgba(255,255,255,0.2);
+            font-size: 0.7em;
+        }
+
+        .file-item.folder .name { color: #ffd93d; }
+        .file-item.file .name { color: #4d96ff; }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(77,150,255,0.3);
+            background: rgba(77,150,255,0.03);
+        }
+
+        .upload-area.dragover {
+            border-color: #4d96ff;
+            background: rgba(77,150,255,0.05);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            padding: 40px 20px;
+        }
+
+        .empty-state .icon {
+            font-size: 3.5em;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 14px 24px;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: 500;
+            font-size: 0.9em;
+            animation: slideToast 0.5s ease-out;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            max-width: 380px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes slideToast {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .toast-success { background: linear-gradient(135deg, rgba(107,203,119,0.2), rgba(107,203,119,0.05)); border-left: 3px solid #6bcb77; }
+        .toast-error { background: linear-gradient(135deg, rgba(255,107,107,0.2), rgba(255,107,107,0.05)); border-left: 3px solid #ff6b6b; }
+        .toast-info { background: linear-gradient(135deg, rgba(77,150,255,0.2), rgba(77,150,255,0.05)); border-left: 3px solid #4d96ff; }
+        .toast-warning { background: linear-gradient(135deg, rgba(255,217,61,0.2), rgba(255,217,61,0.05)); border-left: 3px solid #ffd93d; color: #fff; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(20px);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal.show { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #1a1a3e, #0f3460);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 440px;
+            width: 90%;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+            animation: scaleIn 0.3s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-title {
+            color: #fff;
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal input, .modal select {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 1em;
+            margin-bottom: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .modal input:focus, .modal select:focus {
+            border-color: #4d96ff;
+            background: rgba(255,255,255,0.06);
+            box-shadow: 0 0 30px rgba(77,150,255,0.1);
+        }
+
+        .modal input::placeholder {
+            color: rgba(255,255,255,0.2);
+        }
+
+        .modal select option {
+            background: #1a1a3e;
+            color: #fff;
+        }
+
+        .modal-cost {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+
+        .modal-cost strong { color: #ffd93d; }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .modal-buttons .btn { flex: 1; }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .header-left { justify-content: center; }
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .server-view-header { flex-direction: column; align-items: stretch; text-align: center; }
+            .server-view-title { justify-content: center; flex-wrap: wrap; }
+            .server-view-actions { justify-content: center; }
+            .info-grid { grid-template-columns: 1fr; }
+            .modal-content { padding: 25px 20px; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .server-item { flex-direction: column; align-items: stretch; gap: 6px; }
+            .server-status-badge { align-self: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goHome()">← Home</button>
+                <span class="logo-text">🌹 Premium Hosting</span>
+            </div>
+            <div>
+                <span class="user-badge">
+                    <span class="avatar">U</span>
+                    <span id="username">Demo User</span>
+                </span>
+                <span class="points-badge">💎 <span id="pointsDisplay">150</span></span>
+                <button class="refresh-btn" onclick="refreshAll()">🔄</button>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value cpu" id="cpu">0%</div>
+                <div class="stat-label">CPU</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value ram" id="ram">0 MB</div>
+                <div class="stat-label">RAM</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value disk" id="disk">0 MB</div>
+                <div class="stat-label">Disk</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value servers" id="serverCount">0</div>
+                <div class="stat-label">Servers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value points" id="pointsStat">150</div>
+                <div class="stat-label">Points</div>
+            </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main-content">
+            <!-- Server List -->
+            <div class="servers-section">
+                <div class="section-header">
+                    <div class="section-title">🖥️ Your Servers <span id="serverCountLabel" style="font-size:0.7em;color:rgba(255,255,255,0.3);font-weight:400;"></span></div>
+                    <button class="btn btn-primary" onclick="openCreateModal()">+ Create</button>
+                </div>
+                <div class="servers-scroll" id="serversList"></div>
+            </div>
+
+            <!-- Server View -->
+            <div class="server-view">
+                <div class="server-view-header">
+                    <div class="server-view-title">
+                        <span class="name" id="viewServerName">Select a Server</span>
+                        <span class="status stopped" id="viewServerStatus">● Offline</span>
+                    </div>
+                    <div class="server-view-actions">
+                        <button class="btn btn-success btn-sm" onclick="viewStartServer()">▶ Start</button>
+                        <button class="btn btn-danger btn-sm" onclick="viewStopServer()">⏹ Stop</button>
+                        <button class="btn btn-warning btn-sm" onclick="viewRestartServer()">🔄 Restart</button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="info" onclick="switchTab('info')">📊 Info</button>
+                    <button class="tab-btn" data-tab="console" onclick="switchTab('console')">📄 Console</button>
+                    <button class="tab-btn" data-tab="files" onclick="switchTab('files')">📁 Files</button>
+                </div>
+
+                <!-- Tab: Info -->
+                <div class="tab-content active" id="tab-info">
+                    <div id="infoContent">
+                        <div class="empty-state">
+                            <span class="icon">👈</span>
+                            Select a server from the left
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Console -->
+                <div class="tab-content" id="tab-console">
+                    <div id="consoleContent">
+                        <div class="empty-state">
+                            <span class="icon">📄</span>
+                            No console logs
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Files -->
+                <div class="tab-content" id="tab-files">
+                    <div id="filesContent">
+                        <div class="empty-state">
+                            <span class="icon">📁</span>
+                            No files
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Modal -->
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-title">🖥️ Create New Server</div>
+            <input type="text" id="serverName" placeholder="Server Name (e.g., MyBot)" />
+            <select id="serverType">
+                <option value="python">🐍 Python</option>
+                <option value="nodejs">🟢 Node.js</option>
+            </select>
+            <div class="modal-cost">Cost: <strong>5 points</strong> <span style="margin-left:15px;">Balance: <strong id="modalPoints">150</strong></span></div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                <button class="btn btn-success" onclick="createServer()">🚀 Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ============================================
+        // STATE
+        // ============================================
+        const userId = 1; // Demo user
+        let servers = [];
+        let selectedServerId = null;
+        let points = 150;
+        let socket = null;
+
+        // ============================================
+        // WEB SOCKET
+        // ============================================
+        function connectSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            socket = new WebSocket(`${protocol}//${window.location.host}`);
+            
+            socket.onopen = () => console.log('🔌 Connected');
+            socket.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+                updateStats(data);
+            };
+            socket.onclose = () => setTimeout(connectSocket, 3000);
+        }
+
+        // ============================================
+        // API CALLS
+        // ============================================
+        async function loadServers() {
+            try {
+                const res = await fetch(`/api/servers/${userId}`);
+                servers = await res.json();
+                renderServers();
+                if (servers.length > 0 && !selectedServerId) {
+                    selectServer(servers[0].id);
+                }
+                document.getElementById('serverCountLabel').textContent = `(${servers.length}/3)`;
+            } catch (e) {
+                console.error('Error loading servers:', e);
+            }
+        }
+
+        async function loadUser() {
+            try {
+                const res = await fetch(`/api/user/${userId}`);
+                const user = await res.json();
+                points = user.points || 0;
+                document.getElementById('pointsDisplay').textContent = points;
+                document.getElementById('pointsStat').textContent = points;
+                document.getElementById('modalPoints').textContent = points;
+                document.getElementById('username').textContent = user.username || 'Demo User';
+            } catch (e) {
+                console.error('Error loading user:', e);
+            }
+        }
+
+        // ============================================
+        // RENDER FUNCTIONS
+        // ============================================
+        function renderServers() {
+            const list = document.getElementById('serversList');
+            if (!servers || servers.length === 0) {
+                list.innerHTML = `<div class="empty-state" style="padding:20px 0;"><span class="icon">📭</span>No servers</div>`;
+                return;
+            }
+            list.innerHTML = servers.map(s => `
+                <div class="server-item ${selectedServerId === s.id ? 'active' : ''}" onclick="selectServer('${s.id}')">
+                    <div>
+                        <div class="server-item-name">${s.name}</div>
+                        <div class="server-item-details">${s.type.toUpperCase()} • ${s.id}</div>
+                    </div>
+                    <span class="server-status-badge badge-${s.status}">${s.status === 'running' ? '🟢 Running' : '🔴 Stopped'}</span>
+                </div>
+            `).join('');
+            document.getElementById('serverCount').textContent = servers.length;
+        }
+
+        function selectServer(id) {
+            selectedServerId = id;
+            renderServers();
+            renderServerView(id);
+        }
+
+        function renderServerView(id) {
+            const server = servers.find(s => s.id === id);
+            if (!server) {
+                document.getElementById('viewServerName').textContent = 'Select a Server';
+                document.getElementById('viewServerStatus').className = 'status stopped';
+                document.getElementById('viewServerStatus').textContent = '● Offline';
+                document.getElementById('infoContent').innerHTML = `<div class="empty-state"><span class="icon">👈</span>Select a server</div>`;
+                return;
+            }
+
+            document.getElementById('viewServerName').textContent = server.name;
+            const statusEl = document.getElementById('viewServerStatus');
+            if (server.status === 'running') {
+                statusEl.className = 'status running';
+                statusEl.textContent = '● Online';
+            } else {
+                statusEl.className = 'status stopped';
+                statusEl.textContent = '● Offline';
+            }
+
+            // Info
+            document.getElementById('infoContent').innerHTML = `
+                <div class="info-grid">
+                    <div class="info-item"><div class="label">🆔 ID</div><div class="value">${server.id}</div></div>
+                    <div class="info-item"><div class="label">📦 Type</div><div class="value">${server.type.toUpperCase()}</div></div>
+                    <div class="info-item"><div class="label">📅 Created</div><div class="value">${new Date(server.created).toLocaleDateString()}</div></div>
+                    <div class="info-item"><div class="label">📊 Status</div><div class="value" style="color:${server.status === 'running' ? '#6bcb77' : '#ff6b6b'}">${server.status === 'running' ? '🟢 Running' : '🔴 Stopped'}</div></div>
+                    <div class="info-item"><div class="label">💻 CPU</div><div class="value">${server.cpu || 0}%</div></div>
+                    <div class="info-item"><div class="label">🧠 RAM</div><div class="value">${server.ram || 0} MB</div></div>
+                    <div class="info-item"><div class="label">💾 Disk</div><div class="value">${server.disk || 0} MB</div></div>
+                    <div class="info-item"><div class="label">🔄 PID</div><div class="value">${server.pid || 'N/A'}</div></div>
+                </div>
+            `;
+
+            // Console
+            renderConsole(server);
+            
+            // Files
+            renderFiles(server);
+        }
+
+        function renderConsole(server) {
+            const container = document.getElementById('consoleContent');
+            const logs = server.logs || [{ time: 'N/A', type: 'info', msg: 'No logs available' }];
+            container.innerHTML = `
+                <div class="console-container">
+                    ${logs.map(l => `
+                        <div class="console-line">
+                            <span class="time">[${l.time}]</span>
+                            <span class="log-${l.type}">${l.msg}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn btn-secondary btn-sm" onclick="refreshConsole()">🔄 Refresh</button>
+                </div>
+            `;
+        }
+
+        async function renderFiles(server) {
+            const container = document.getElementById('filesContent');
+            try {
+                const res = await fetch(`/api/files/${server.id}`);
+                const data = await res.json();
+                const files = data.files || [];
+                
+                if (files.length === 0) {
+                    container.innerHTML = `<div class="empty-state"><span class="icon">📁</span>No files</div>`;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="file-manager">
+                        ${files.map(f => `
+                            <div class="file-item ${f.type}">
+                                <span class="name">${f.type === 'folder' ? '📁' : '📄'} ${f.name}</span>
+                                <span class="size">${f.size}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-primary btn-sm" onclick="uploadFile('${server.id}')">📤 Upload</button>
+                        <button class="btn btn-secondary btn-sm" onclick="createFolder('${server.id}')">📁 New Folder</button>
+                        <button class="btn btn-secondary btn-sm" onclick="refreshFiles('${server.id}')">🔄 Refresh</button>
+                    </div>
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                        📤 Drag & drop or click to upload
+                    </div>
+                    <input type="file" id="fileInput" style="display:none" multiple onchange="handleFileUpload('${server.id}', this)" />
+                `;
+            } catch (e) {
+                console.error('Error loading files:', e);
+                container.innerHTML = `<div class="empty-state"><span class="icon">❌</span>Error loading files</div>`;
+            }
+        }
+
+        // ============================================
+        // STATS
+        // ============================================
+        function updateStats(data) {
+            document.getElementById('cpu').textContent = (data.cpu || 0) + '%';
+            document.getElementById('ram').textContent = (data.ram || 0) + ' MB';
+            document.getElementById('disk').textContent = (data.disk?.used || 0) + ' GB';
+            document.getElementById('serverCount').textContent = data.servers || 0;
+        }
+
+        // ============================================
+        // SERVER ACTIONS
+        // ============================================
+        async function viewStartServer() {
+            if (!selectedServerId) return showToast('❌ Select a server first', 'error');
+            const server = servers.find(s => s.id === selectedServerId);
+            if (!server) return;
+            
+            try {
+                showToast('🔄 Starting server...', 'info');
+                const res = await fetch('/api/server/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, serverId: selectedServerId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ "${server.name}" started!`, 'success');
+                    await loadServers();
+                }
+            } catch (e) {
+                showToast('❌ Failed to start server', 'error');
+            }
+        }
+
+        async function viewStopServer() {
+            if (!selectedServerId) return showToast('❌ Select a server first', 'error');
+            const server = servers.find(s => s.id === selectedServerId);
+            if (!server) return;
+            
+            try {
+                showToast('⏹️ Stopping server...', 'info');
+                const res = await fetch('/api/server/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, serverId: selectedServerId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`⏹️ "${server.name}" stopped`, 'warning');
+                    await loadServers();
+                }
+            } catch (e) {
+                showToast('❌ Failed to stop server', 'error');
+            }
+        }
+
+        async function viewRestartServer() {
+            if (!selectedServerId) return showToast('❌ Select a server first', 'error');
+            const server = servers.find(s => s.id === selectedServerId);
+            if (!server) return;
+            
+            try {
+                showToast('🔄 Restarting server...', 'info');
+                const res = await fetch('/api/server/restart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, serverId: selectedServerId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ "${server.name}" restarted!`, 'success');
+                    await loadServers();
+                }
+            } catch (e) {
+                showToast('❌ Failed to restart server', 'error');
+            }
+        }
+
+        // ============================================
+        // FILE OPERATIONS
+        // ============================================
+        function uploadFile(serverId) {
+            document.getElementById('fileInput').click();
+        }
+
+        async function handleFileUpload(serverId, input) {
+            const files = input.files;
+            if (!files.length) return;
+
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const res = await fetch(`/api/upload/${serverId}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(`📤 "${file.name}" uploaded!`, 'success');
+                        refreshFiles(serverId);
+                    }
+                } catch (e) {
+                    showToast(`❌ Failed to upload "${file.name}"`, 'error');
+                }
+            }
+            input.value = '';
+        }
+
+        async function createFolder(serverId) {
+            const folderName = prompt('📁 Enter folder name:');
+            if (!folderName) return;
+            
+            try {
+                const res = await fetch(`/api/folder/${serverId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ folderName })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`📁 "${folderName}" created!`, 'success');
+                    refreshFiles(serverId);
+                }
+            } catch (e) {
+                showToast('❌ Failed to create folder', 'error');
+            }
+        }
+
+        async function refreshFiles(serverId) {
+            const server = servers.find(s => s.id === serverId);
+            if (server) renderFiles(server);
+            showToast('🔄 Files refreshed', 'info');
+        }
+
+        async function refreshConsole() {
+            if (selectedServerId) {
+                const server = servers.find(s => s.id === selectedServerId);
+                if (server) renderConsole(server);
+                showToast('🔄 Console refreshed', 'info');
+            }
+        }
+
+        // ============================================
+        // CREATE SERVER
+        // ============================================
+        function openCreateModal() {
+            if (servers.length >= 3) {
+                showToast('❌ Max 3 servers per account!', 'error');
+                return;
+            }
+            document.getElementById('createModal').classList.add('show');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+        }
+
+        async function createServer() {
+            const name = document.getElementById('serverName').value.trim();
+            const type = document.getElementById('serverType').value;
+            
+            if (!name || name.length < 3) {
+                showToast('❌ Name must be 3+ characters', 'error');
+                return;
+            }
+
+            try {
+                showToast('🔄 Creating server...', 'info');
+                const res = await fetch('/api/server/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, name, type })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`🎉 "${name}" created!`, 'success');
+                    closeCreateModal();
+                    document.getElementById('serverName').value = '';
+                    await loadServers();
+                    await loadUser();
+                }
+            } catch (e) {
+                showToast('❌ Failed to create server', 'error');
+            }
+        }
+
+        // ============================================
+        // TABS
+        // ============================================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tab}`));
+        }
+
+        // ============================================
+        // TOAST
+        // ============================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(40px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+        function goHome() { window.location.href = '/'; }
+        function refreshAll() {
+            showToast('🔄 Refreshing...', 'info');
+            loadUser();
+            loadServers();
+            setTimeout(() => showToast('✅ Refreshed!', 'success'), 500);
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        connectSocket();
+        loadUser();
+        loadServers();
+
+        // Auto-refresh
+        setInterval(() => {
+            loadUser();
+            loadServers();
+        }, 30000);
+
+        // Close modal on outside click
+        document.getElementById('createModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCreateModal();
+        });
+
+        console.log('🌹 Premium Hosting Dashboard Loaded!');
+        console.log('📊 Click a server to view details.');
+    </script>
+</body>
+</html>
