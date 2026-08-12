@@ -761,10 +761,10 @@
             </div>
             <div>
                 <span class="user-badge">
-                    <span class="avatar">U</span>
-                    <span id="username">Demo User</span>
+                    <span class="avatar" id="userAvatar">U</span>
+                    <span id="username">Loading...</span>
                 </span>
-                <span class="points-badge">💎 <span id="pointsDisplay">150</span></span>
+                <span class="points-badge">💎 <span id="pointsDisplay">0</span></span>
                 <button class="refresh-btn" onclick="refreshAll()">🔄</button>
             </div>
         </header>
@@ -788,7 +788,7 @@
                 <div class="stat-label">Servers</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value points" id="pointsStat">150</div>
+                <div class="stat-value points" id="pointsStat">0</div>
                 <div class="stat-label">Points</div>
             </div>
         </div>
@@ -801,7 +801,12 @@
                     <div class="section-title">🖥️ Your Servers <span id="serverCountLabel" style="font-size:0.7em;color:rgba(255,255,255,0.3);font-weight:400;"></span></div>
                     <button class="btn btn-primary" onclick="openCreateModal()">+ Create</button>
                 </div>
-                <div class="servers-scroll" id="serversList"></div>
+                <div class="servers-scroll" id="serversList">
+                    <div class="empty-state">
+                        <span class="icon">📭</span>
+                        Loading servers...
+                    </div>
+                </div>
             </div>
 
             <!-- Server View -->
@@ -815,6 +820,7 @@
                         <button class="btn btn-success btn-sm" onclick="viewStartServer()">▶ Start</button>
                         <button class="btn btn-danger btn-sm" onclick="viewStopServer()">⏹ Stop</button>
                         <button class="btn btn-warning btn-sm" onclick="viewRestartServer()">🔄 Restart</button>
+                        <button class="btn btn-danger btn-sm" onclick="viewDeleteServer()">🗑 Delete</button>
                     </div>
                 </div>
 
@@ -867,7 +873,7 @@
                 <option value="python">🐍 Python</option>
                 <option value="nodejs">🟢 Node.js</option>
             </select>
-            <div class="modal-cost">Cost: <strong>5 points</strong> <span style="margin-left:15px;">Balance: <strong id="modalPoints">150</strong></span></div>
+            <div class="modal-cost">Cost: <strong>5 points</strong> <span style="margin-left:15px;">Balance: <strong id="modalPoints">0</strong></span></div>
             <div class="modal-buttons">
                 <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
                 <button class="btn btn-success" onclick="createServer()">🚀 Create</button>
@@ -880,12 +886,13 @@
 
     <script>
         // ============================================
-        // STATE
+        // STATE - GET USER ID FROM URL
         // ============================================
-        const userId = 1; // Demo user
+        const pathParts = window.location.pathname.split('/');
+        const userId = pathParts[pathParts.length - 1] || '1';
         let servers = [];
         let selectedServerId = null;
-        let points = 150;
+        let userData = null;
         let socket = null;
 
         // ============================================
@@ -904,33 +911,64 @@
         }
 
         // ============================================
-        // API CALLS
+        // API CALLS - REAL DATA
         // ============================================
-        async function loadServers() {
-            try {
-                const res = await fetch(`/api/servers/${userId}`);
-                servers = await res.json();
-                renderServers();
-                if (servers.length > 0 && !selectedServerId) {
-                    selectServer(servers[0].id);
-                }
-                document.getElementById('serverCountLabel').textContent = `(${servers.length}/3)`;
-            } catch (e) {
-                console.error('Error loading servers:', e);
-            }
-        }
-
         async function loadUser() {
             try {
                 const res = await fetch(`/api/user/${userId}`);
-                const user = await res.json();
-                points = user.points || 0;
-                document.getElementById('pointsDisplay').textContent = points;
-                document.getElementById('pointsStat').textContent = points;
-                document.getElementById('modalPoints').textContent = points;
-                document.getElementById('username').textContent = user.username || 'Demo User';
+                if (!res.ok) throw new Error('User not found');
+                userData = await res.json();
+                
+                document.getElementById('username').textContent = userData.username || 'Unknown';
+                document.getElementById('userAvatar').textContent = (userData.username || 'U')[0].toUpperCase();
+                document.getElementById('pointsDisplay').textContent = userData.points || 0;
+                document.getElementById('pointsStat').textContent = userData.points || 0;
+                document.getElementById('modalPoints').textContent = userData.points || 0;
+                
+                return userData;
             } catch (e) {
                 console.error('Error loading user:', e);
+                document.getElementById('username').textContent = 'Error';
+                showToast('❌ Failed to load user data', 'error');
+                return null;
+            }
+        }
+
+        async function loadServers() {
+            try {
+                const res = await fetch(`/api/servers/${userId}`);
+                if (!res.ok) throw new Error('Failed to load servers');
+                servers = await res.json();
+                
+                renderServers();
+                document.getElementById('serverCountLabel').textContent = `(${servers.length}/3)`;
+                document.getElementById('serverCount').textContent = servers.length;
+                
+                if (servers.length > 0 && !selectedServerId) {
+                    selectServer(servers[0].id);
+                } else if (servers.length === 0) {
+                    document.getElementById('viewServerName').textContent = 'No Servers';
+                    document.getElementById('viewServerStatus').className = 'status stopped';
+                    document.getElementById('viewServerStatus').textContent = '● Offline';
+                    document.getElementById('infoContent').innerHTML = `
+                        <div class="empty-state">
+                            <span class="icon">📭</span>
+                            No servers created yet
+                        </div>
+                    `;
+                }
+                
+                return servers;
+            } catch (e) {
+                console.error('Error loading servers:', e);
+                document.getElementById('serversList').innerHTML = `
+                    <div class="empty-state">
+                        <span class="icon">❌</span>
+                        Failed to load servers
+                    </div>
+                `;
+                showToast('❌ Failed to load servers', 'error');
+                return [];
             }
         }
 
@@ -939,20 +977,26 @@
         // ============================================
         function renderServers() {
             const list = document.getElementById('serversList');
+            
             if (!servers || servers.length === 0) {
-                list.innerHTML = `<div class="empty-state" style="padding:20px 0;"><span class="icon">📭</span>No servers</div>`;
+                list.innerHTML = `
+                    <div class="empty-state" style="padding:20px 0;">
+                        <span class="icon">📭</span>
+                        No servers
+                    </div>
+                `;
                 return;
             }
+
             list.innerHTML = servers.map(s => `
                 <div class="server-item ${selectedServerId === s.id ? 'active' : ''}" onclick="selectServer('${s.id}')">
                     <div>
                         <div class="server-item-name">${s.name}</div>
-                        <div class="server-item-details">${s.type.toUpperCase()} • ${s.id}</div>
+                        <div class="server-item-details">${s.type.toUpperCase()} • ${s.id.substring(0, 8)}</div>
                     </div>
                     <span class="server-status-badge badge-${s.status}">${s.status === 'running' ? '🟢 Running' : '🔴 Stopped'}</span>
                 </div>
             `).join('');
-            document.getElementById('serverCount').textContent = servers.length;
         }
 
         function selectServer(id) {
@@ -1028,7 +1072,17 @@
                 const files = data.files || [];
                 
                 if (files.length === 0) {
-                    container.innerHTML = `<div class="empty-state"><span class="icon">📁</span>No files</div>`;
+                    container.innerHTML = `
+                        <div class="empty-state"><span class="icon">📁</span>No files</div>
+                        <div class="file-actions">
+                            <button class="btn btn-primary btn-sm" onclick="uploadFile('${server.id}')">📤 Upload</button>
+                            <button class="btn btn-secondary btn-sm" onclick="createFolder('${server.id}')">📁 New Folder</button>
+                        </div>
+                        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                            📤 Drag & drop or click to upload
+                        </div>
+                        <input type="file" id="fileInput" style="display:none" multiple onchange="handleFileUpload('${server.id}', this)" />
+                    `;
                     return;
                 }
 
@@ -1046,7 +1100,7 @@
                         <button class="btn btn-secondary btn-sm" onclick="createFolder('${server.id}')">📁 New Folder</button>
                         <button class="btn btn-secondary btn-sm" onclick="refreshFiles('${server.id}')">🔄 Refresh</button>
                     </div>
-                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                         📤 Drag & drop or click to upload
                     </div>
                     <input type="file" id="fileInput" style="display:none" multiple onchange="handleFileUpload('${server.id}', this)" />
@@ -1064,7 +1118,6 @@
             document.getElementById('cpu').textContent = (data.cpu || 0) + '%';
             document.getElementById('ram').textContent = (data.ram || 0) + ' MB';
             document.getElementById('disk').textContent = (data.disk?.used || 0) + ' GB';
-            document.getElementById('serverCount').textContent = data.servers || 0;
         }
 
         // ============================================
@@ -1080,12 +1133,14 @@
                 const res = await fetch('/api/server/start', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, serverId: selectedServerId })
+                    body: JSON.stringify({ userId: parseInt(userId), serverId: selectedServerId })
                 });
                 const data = await res.json();
                 if (data.success) {
                     showToast(`✅ "${server.name}" started!`, 'success');
                     await loadServers();
+                } else {
+                    showToast('❌ Failed to start server', 'error');
                 }
             } catch (e) {
                 showToast('❌ Failed to start server', 'error');
@@ -1102,12 +1157,14 @@
                 const res = await fetch('/api/server/stop', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, serverId: selectedServerId })
+                    body: JSON.stringify({ userId: parseInt(userId), serverId: selectedServerId })
                 });
                 const data = await res.json();
                 if (data.success) {
                     showToast(`⏹️ "${server.name}" stopped`, 'warning');
                     await loadServers();
+                } else {
+                    showToast('❌ Failed to stop server', 'error');
                 }
             } catch (e) {
                 showToast('❌ Failed to stop server', 'error');
@@ -1124,15 +1181,42 @@
                 const res = await fetch('/api/server/restart', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, serverId: selectedServerId })
+                    body: JSON.stringify({ userId: parseInt(userId), serverId: selectedServerId })
                 });
                 const data = await res.json();
                 if (data.success) {
                     showToast(`✅ "${server.name}" restarted!`, 'success');
                     await loadServers();
+                } else {
+                    showToast('❌ Failed to restart server', 'error');
                 }
             } catch (e) {
                 showToast('❌ Failed to restart server', 'error');
+            }
+        }
+
+        async function viewDeleteServer() {
+            if (!selectedServerId) return showToast('❌ Select a server first', 'error');
+            const server = servers.find(s => s.id === selectedServerId);
+            if (!server) return;
+            
+            if (!confirm(`⚠️ Are you sure you want to delete "${server.name}"?\nThis action cannot be undone!`)) return;
+            
+            try {
+                showToast('🗑️ Deleting server...', 'info');
+                const res = await fetch(`/api/server/${userId}/${selectedServerId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`🗑️ "${server.name}" deleted`, 'error');
+                    selectedServerId = null;
+                    await loadServers();
+                } else {
+                    showToast('❌ Failed to delete server', 'error');
+                }
+            } catch (e) {
+                showToast('❌ Failed to delete server', 'error');
             }
         }
 
@@ -1160,6 +1244,8 @@
                     if (data.success) {
                         showToast(`📤 "${file.name}" uploaded!`, 'success');
                         refreshFiles(serverId);
+                    } else {
+                        showToast(`❌ Failed to upload "${file.name}"`, 'error');
                     }
                 } catch (e) {
                     showToast(`❌ Failed to upload "${file.name}"`, 'error');
@@ -1182,6 +1268,8 @@
                 if (data.success) {
                     showToast(`📁 "${folderName}" created!`, 'success');
                     refreshFiles(serverId);
+                } else {
+                    showToast('❌ Failed to create folder', 'error');
                 }
             } catch (e) {
                 showToast('❌ Failed to create folder', 'error');
@@ -1197,8 +1285,19 @@
         async function refreshConsole() {
             if (selectedServerId) {
                 const server = servers.find(s => s.id === selectedServerId);
-                if (server) renderConsole(server);
-                showToast('🔄 Console refreshed', 'info');
+                if (server) {
+                    // Fetch fresh logs
+                    try {
+                        const res = await fetch(`/api/servers/${userId}`);
+                        const freshServers = await res.json();
+                        const freshServer = freshServers.find(s => s.id === selectedServerId);
+                        if (freshServer) {
+                            server.logs = freshServer.logs;
+                            renderConsole(server);
+                        }
+                    } catch (e) {}
+                    showToast('🔄 Console refreshed', 'info');
+                }
             }
         }
 
@@ -1231,15 +1330,17 @@
                 const res = await fetch('/api/server/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, name, type })
+                    body: JSON.stringify({ userId: parseInt(userId), name, type })
                 });
                 const data = await res.json();
                 if (data.success) {
                     showToast(`🎉 "${name}" created!`, 'success');
                     closeCreateModal();
                     document.getElementById('serverName').value = '';
-                    await loadServers();
                     await loadUser();
+                    await loadServers();
+                } else {
+                    showToast('❌ ' + (data.error || 'Failed to create server'), 'error');
                 }
             } catch (e) {
                 showToast('❌ Failed to create server', 'error');
@@ -1275,6 +1376,7 @@
         // NAVIGATION
         // ============================================
         function goHome() { window.location.href = '/'; }
+        
         function refreshAll() {
             showToast('🔄 Refreshing...', 'info');
             loadUser();
@@ -1285,11 +1387,13 @@
         // ============================================
         // INIT
         // ============================================
+        console.log('🌹 Dashboard loading for user:', userId);
+        
         connectSocket();
         loadUser();
         loadServers();
 
-        // Auto-refresh
+        // Auto-refresh every 30 seconds
         setInterval(() => {
             loadUser();
             loadServers();
@@ -1301,7 +1405,7 @@
         });
 
         console.log('🌹 Premium Hosting Dashboard Loaded!');
-        console.log('📊 Click a server to view details.');
+        console.log('📊 User ID:', userId);
     </script>
 </body>
 </html>
