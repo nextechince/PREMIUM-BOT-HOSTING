@@ -17,15 +17,17 @@ from datetime import datetime
 from pathlib import Path
 
 # --- Configuration ---
-API_TOKEN = os.environ.get('TOKEN') or '8758264160:AAEgWrfmFMCU0dedIiZoK-kQb9R5dAixcCI'
+API_TOKEN = os.environ.get('TOKEN') or '8929639690:AAEwBtfMd9K8kfq2SF3veyNIlvC9HpYwrXY'
 ADMIN_ID = 7158115683
 CHANNEL_ID = "@MRANONIMOUS01" 
 bot = telebot.TeleBot(API_TOKEN, parse_mode='HTML')
 
-DB_FILE = "users_data.json"
-SETTINGS_FILE = "bot_settings.json"
-DEPLOY_DIR = "deployed_bots"
-LOGS_DIR = "bot_logs"
+# Use absolute paths to avoid confusion
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, "users_data.json")
+SETTINGS_FILE = os.path.join(BASE_DIR, "bot_settings.json")
+DEPLOY_DIR = os.path.join(BASE_DIR, "deployed_bots")
+LOGS_DIR = os.path.join(BASE_DIR, "bot_logs")
 
 # Create directories
 for dir_name in [DEPLOY_DIR, LOGS_DIR]:
@@ -170,19 +172,21 @@ def install_dependencies(file_path, user_id, f_name):
         return [], []
 
 def run_user_file(f_path, user_id, f_name):
-    # Check if file exists
-    if not os.path.exists(f_path):
-        error_msg = f"File not found: {f_path}"
+    # FIXED: Use absolute path and verify
+    abs_path = os.path.abspath(f_path)
+    
+    if not os.path.exists(abs_path):
+        error_msg = f"File not found: {abs_path}"
         log_error(error_msg, user_id)
         bot.send_message(user_id, error_text("File Error", f"<code>{error_msg}</code>"))
         return False, "File not found"
     
     ext = os.path.splitext(f_name)[1].lower()
     
-    # PYTHON ONLY - Only accept .py files
+    # PYTHON ONLY
     if ext != '.py':
         bot.send_message(user_id, error_text("Wrong Bot", 
-            "This bot only deploys <b>Python (.py)</b> files.\nUse the JS bot for JavaScript files."))
+            "This bot only deploys <b>Python (.py)</b> files."))
         return False, "Wrong bot - Use JS bot"
     
     try:
@@ -191,19 +195,20 @@ def run_user_file(f_path, user_id, f_name):
             lf.write(f"=== Bot Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===\n")
             lf.write(f"User ID: {user_id}\n")
             lf.write(f"File: {f_name}\n")
-            lf.write(f"Path: {f_path}\n")
+            lf.write(f"Path: {abs_path}\n")
             lf.write("="*50 + "\n\n")
         
+        # FIXED: Use absolute path in command
         process = subprocess.Popen(
-            [sys.executable, f_path],
+            [sys.executable, abs_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
-            cwd=os.path.dirname(f_path)
+            cwd=os.path.dirname(abs_path)
         )
         
-        running_processes[f_path] = {
+        running_processes[abs_path] = {
             'process': process,
             'user_id': user_id,
             'f_name': f_name,
@@ -212,7 +217,7 @@ def run_user_file(f_path, user_id, f_name):
             'pid': process.pid
         }
         
-        threading.Thread(target=monitor_logs, args=(f_path, process, log_file), daemon=True).start()
+        threading.Thread(target=monitor_logs, args=(abs_path, process, log_file), daemon=True).start()
         time.sleep(3)
         
         if process.poll() is not None:
@@ -220,8 +225,8 @@ def run_user_file(f_path, user_id, f_name):
                 error_msg = lf.read()[-2000:]
             bot.send_message(user_id, error_text("Deployment Failed", 
                 f"<b>Runtime Error</b>\n\n<pre>{error_msg[:1500]}</pre>"))
-            if f_path in running_processes:
-                del running_processes[f_path]
+            if abs_path in running_processes:
+                del running_processes[abs_path]
             return False, "Runtime error"
         
         bot.send_message(user_id, success_text("Bot Deployed", 
@@ -248,13 +253,14 @@ def monitor_logs(f_path, process, log_file):
             break
 
 def stop_bot(f_path):
-    if f_path in running_processes:
+    abs_path = os.path.abspath(f_path)
+    if abs_path in running_processes:
         try:
-            running_processes[f_path]['process'].terminate()
+            running_processes[abs_path]['process'].terminate()
             time.sleep(2)
-            if running_processes[f_path]['process'].poll() is None:
-                running_processes[f_path]['process'].kill()
-            del running_processes[f_path]
+            if running_processes[abs_path]['process'].poll() is None:
+                running_processes[abs_path]['process'].kill()
+            del running_processes[abs_path]
             return True
         except:
             return False
@@ -409,9 +415,10 @@ def process_upload(message):
     original_fname = message.document.file_name
     f_name = original_fname
     
-    # FIXED: Use simple join - NO normpath
+    # FIXED: Use absolute path with os.path.join
     safe_filename = f"{uid}_{f_name}"
     f_path = os.path.join(DEPLOY_DIR, safe_filename)
+    f_path = os.path.abspath(f_path)  # Convert to absolute path
     
     print(f"📥 Upload: {f_name}")
     print(f"📁 Saving to: {f_path}")
@@ -420,7 +427,7 @@ def process_upload(message):
     valid_extensions = ['.py', '.zip']
     if not any(f_name.lower().endswith(ext) for ext in valid_extensions):
         return bot.send_message(message.chat.id, error_text("Wrong Format",
-            f"❌ This bot only deploys <b>Python (.py)</b> files!\nSupported: {', '.join(valid_extensions)}\n\nUse the JS bot for JavaScript files."))
+            f"❌ This bot only deploys <b>Python (.py)</b> files!\nSupported: {', '.join(valid_extensions)}"))
     
     prog_msg = bot.send_message(message.chat.id, premium_text("⏳ Processing...", 
         f"📦 File: {f_name}\n⏳ Status: Uploading...", "⚙️"))
@@ -438,8 +445,8 @@ def process_upload(message):
         
         # Handle ZIP files
         if f_name.endswith('.zip'):
-            # FIXED: Clean extract directory name
             extract_dir = os.path.join(DEPLOY_DIR, f"{uid}_{f_name.replace('.zip', '')}")
+            extract_dir = os.path.abspath(extract_dir)
             with zipfile.ZipFile(f_path, 'r') as zip_ref:
                 zip_ref.extractall(extract_dir)
             os.remove(f_path)
@@ -458,7 +465,7 @@ def process_upload(message):
                 return bot.send_message(message.chat.id, error_text("Invalid ZIP", 
                     "No Python (.py) file found in archive."))
             
-            final_path = main_file
+            final_path = os.path.abspath(main_file)
             final_name = os.path.basename(main_file)
             print(f"📦 Extracted: {final_path}")
         
@@ -517,8 +524,8 @@ def show_my_files(message):
         return bot.send_message(message.chat.id, info_text("📂 No Files", "Use <b>✦ Deploy Py</b> to get started!"))
     
     for f_name in files:
-        # FIXED: Use simple join
         f_path = os.path.join(DEPLOY_DIR, f"{uid}_{f_name}")
+        f_path = os.path.abspath(f_path)
         is_running = f_path in running_processes and running_processes[f_path]['process'].poll() is None
         status = "🟢 Running" if is_running else "🔴 Stopped"
         pid = running_processes[f_path]['pid'] if is_running else "N/A"
@@ -680,6 +687,7 @@ def admin_all_files(message):
         for f_name in data.get('files', []):
             found = True
             f_path = os.path.join(DEPLOY_DIR, f"{target_uid}_{f_name}")
+            f_path = os.path.abspath(f_path)
             is_running = f_path in running_processes and running_processes[f_path]['process'].poll() is None
             status = "🟢" if is_running else "🔴"
             markup = types.InlineKeyboardMarkup(row_width=2)
@@ -723,6 +731,7 @@ def callback_handler(call):
         f_name = "_".join(parts[1:-1])
         target_uid = parts[-1]
         f_path = os.path.join(DEPLOY_DIR, f"{target_uid}_{f_name}")
+        f_path = os.path.abspath(f_path)
         
         if action == "stop":
             if stop_bot(f_path):
@@ -901,6 +910,8 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"🕐 Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"👥 Users: {len(users_db)}")
+    print(f"📁 Base Dir: {BASE_DIR}")
+    print(f"📁 Deploy Dir: {DEPLOY_DIR}")
     print("=" * 60)
     print("✅ Python bot is running...")
     print("=" * 60)
