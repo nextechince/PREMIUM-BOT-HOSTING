@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["python311", "nodejs"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt", "npm install"]
-
-[start]
-cmd = "python3 bot_py.py & node bot_js.js"
