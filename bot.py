@@ -17,12 +17,21 @@ from datetime import datetime
 from pathlib import Path
 
 # --- Configuration ---
-API_TOKEN = os.environ.get('TOKEN') or '8928335304:AAFnShZwxZdkVL9NIgqwA0Kt1LdnWzJHRc8'
+API_TOKEN = os.environ.get('TOKEN') or 'YOUR_PYTHON_BOT_TOKEN'
 ADMIN_ID = 7158115683
-CHANNEL_ID = "@MRANONIMOUS01" 
+CHANNEL_ID = "@MRANONIMOUS01"
+
+# --- FORCE JOIN CHANNELS ---
+# Add your channels here: { "name": "Channel Name", "link": "https://t.me/username" }
+FORCE_JOIN_CHANNELS = [
+    {"name": "ᴍᴀɪɴ ᴄʜᴀɴɴᴇʟ", "link": "https://t.me/MRANONIMOUS01"},
+    {"name": "ʟᴏɴᴇʀ ᴅᴏᴍᴀɪɴ", " https://t.me/lordtarrificterritory"},
+    {"name": "ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ᴜᴘᴅᴀᴛᴇs", "https://t.me/PREMIUM_BOT_HOSTING_UPDATE"}
+]
+
 bot = telebot.TeleBot(API_TOKEN, parse_mode='HTML')
 
-# Use absolute paths to avoid confusion
+# Use absolute paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "users_data.json")
 SETTINGS_FILE = os.path.join(BASE_DIR, "bot_settings.json")
@@ -64,7 +73,8 @@ def load_settings():
         "maintenance": False,
         "welcome_video": None,
         "bot_username": None,
-        "new_user_notify": True
+        "new_user_notify": True,
+        "force_join": True
     }
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -106,13 +116,42 @@ def premium_text(title, content, icon="✦", footer=None):
     return html
 
 def success_text(title, content):
-    return premium_text(f"✅ {title}", content, "✨", "ᴛʜᴀɴᴋ ʏᴏᴜ ғᴏʀ ᴄʜᴏᴏsɪɴɢ 𝕻ʀᴇᴍɪᴜᴍ 𝕮ʟᴏᴜᴅ 𝕳ᴏsᴛɪɴɢ")
+    return premium_text(f"✅ {title}", content, "✨", "ᴛʜᴀɴᴋ ʏᴏᴜ ғᴏʀ ᴄʜᴏᴏsɪɴɢ ᴘʏᴛʜᴏɴ 𝕻ʀᴇᴍɪᴜᴍ 𝕮ʟᴏᴜᴅ 𝕳ᴏsᴛɪɴɢ")
 
 def error_text(title, content):
     return premium_text(f"❌ {title}", content, "⚠️", "ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ᴏʀ ᴄᴏɴᴛᴀᴄᴛ sᴜᴘᴘᴏʀᴛ")
 
 def info_text(title, content):
     return premium_text(f"ℹ️ {title}", content, "📌", "ɴᴇᴇᴅ ʜᴇʟᴘ? ᴄᴏɴᴛᴀᴄᴛ sᴜᴘᴘᴏʀᴛ")
+
+# --- Force Join Functions ---
+def check_force_join(user_id):
+    """Check if user has joined all required channels"""
+    if not settings.get("force_join", True):
+        return True
+    
+    try:
+        for channel in FORCE_JOIN_CHANNELS:
+            try:
+                # Extract username from link
+                username = channel["link"].replace("https://t.me/", "")
+                chat_member = bot.get_chat_member(f"@{username}", user_id)
+                if chat_member.status in ['left', 'kicked']:
+                    return False
+            except:
+                # Channel might be private or bot not admin
+                continue
+        return True
+    except:
+        return True
+
+def get_force_join_keyboard():
+    """Get keyboard for force join channels"""
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    for channel in FORCE_JOIN_CHANNELS:
+        markup.add(types.InlineKeyboardButton(f"📢 {channel['name']}", url=channel["link"]))
+    markup.add(types.InlineKeyboardButton("✅ ɪ ᴊᴏɪɴᴇᴅ", callback_data="check_join"))
+    return markup
 
 # --- Admin Notification ---
 def notify_admin_new_user(user_id, user_name, username=None, referrer=None):
@@ -143,7 +182,7 @@ def notify_admin_new_user(user_id, user_name, username=None, referrer=None):
     except:
         return False
 
-# --- PYTHON ONLY Hosting Logic ---
+# --- Hosting Logic ---
 def install_dependencies(file_path, user_id, f_name):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -172,7 +211,6 @@ def install_dependencies(file_path, user_id, f_name):
         return [], []
 
 def run_user_file(f_path, user_id, f_name):
-    # FIXED: Use absolute path and verify
     abs_path = os.path.abspath(f_path)
     
     if not os.path.exists(abs_path):
@@ -186,7 +224,7 @@ def run_user_file(f_path, user_id, f_name):
     # PYTHON ONLY
     if ext != '.py':
         bot.send_message(user_id, error_text("Wrong Bot", 
-            "This bot only deploys <b>Python (.py)</b> files."))
+            "This bot only deploys <b>Python (.py)</b> files.\nUse the JS bot for JavaScript files."))
         return False, "Wrong bot - Use JS bot"
     
     try:
@@ -198,7 +236,6 @@ def run_user_file(f_path, user_id, f_name):
             lf.write(f"Path: {abs_path}\n")
             lf.write("="*50 + "\n\n")
         
-        # FIXED: Use absolute path in command
         process = subprocess.Popen(
             [sys.executable, abs_path],
             stdout=subprocess.PIPE,
@@ -318,6 +355,19 @@ def start(message):
     if settings['maintenance'] and uid != str(ADMIN_ID):
         return bot.send_message(message.chat.id, premium_text("🔧 Maintenance", "Bot is under maintenance.", "🔄"))
     
+    # Force Join Check
+    if settings.get("force_join", True) and uid != str(ADMIN_ID):
+        if not check_force_join(uid):
+            return bot.send_message(
+                message.chat.id,
+                premium_text(
+                    "📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟs",
+                    "⚠️ <b>You must join these channels to use this bot!</b>\n\n👇 Click the buttons below and join all channels, then click \"I Joined\"",
+                    "🔒"
+                ),
+                reply_markup=get_force_join_keyboard()
+            )
+    
     is_new = uid not in users_db
     
     if is_new:
@@ -399,31 +449,47 @@ def deploy_bot(message):
     points = users_db.get(uid, {}).get('points', 0)
     cost = settings['hosting_cost']
     
+    # Force Join Check
+    if settings.get("force_join", True) and uid != str(ADMIN_ID):
+        if not check_force_join(uid):
+            return bot.send_message(
+                message.chat.id,
+                premium_text(
+                    "📢 ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟs",
+                    "⚠️ <b>You must join these channels to deploy!</b>\n\n👇 Click the buttons below and join all channels, then click \"I Joined\"",
+                    "🔒"
+                ),
+                reply_markup=get_force_join_keyboard()
+            )
+    
     if points < cost:
         return bot.send_message(message.chat.id, premium_text("💎 Insufficient Points",
             f"💰 Balance: {points} pts\n💎 Required: {cost} pts\n\n💡 Invite friends to earn more!"))
     
     msg = bot.send_message(message.chat.id, premium_text("📤 Deploy Python Bot",
-        f"📂 Supported: .py, .zip\n💰 Cost: {cost} pts\n💎 Balance: {points} pts\n\n📌 <b>Python only!</b>", "🐍"))
+        f"📂 Supported: .py, .zip\n💰 Cost: {cost} pts\n💎 Balance: {points} pts\n\n📌 <b>Python only!</b>\n\n⚠️ <b>Important:</b> Upload the file directly, DO NOT forward from another chat!", "🐍"))
     bot.register_next_step_handler(msg, process_upload)
 
 def process_upload(message):
     if not message.document:
         return bot.send_message(message.chat.id, error_text("No File", "Please send a valid file."))
     
+    # Check file size (max 20MB)
+    if message.document.file_size > 20 * 1024 * 1024:
+        return bot.send_message(message.chat.id, error_text("File Too Large", 
+            "Maximum file size is 20MB. Please upload a smaller file."))
+    
     uid = str(message.from_user.id)
     original_fname = message.document.file_name
     f_name = original_fname
     
-    # FIXED: Use absolute path with os.path.join
     safe_filename = f"{uid}_{f_name}"
     f_path = os.path.join(DEPLOY_DIR, safe_filename)
-    f_path = os.path.abspath(f_path)  # Convert to absolute path
+    f_path = os.path.abspath(f_path)
     
     print(f"📥 Upload: {f_name}")
     print(f"📁 Saving to: {f_path}")
     
-    # PYTHON ONLY
     valid_extensions = ['.py', '.zip']
     if not any(f_name.lower().endswith(ext) for ext in valid_extensions):
         return bot.send_message(message.chat.id, error_text("Wrong Format",
@@ -433,9 +499,26 @@ def process_upload(message):
         f"📦 File: {f_name}\n⏳ Status: Uploading...", "⚙️"))
     
     try:
+        # Get file with error handling
+        try:
+            f_info = bot.get_file(message.document.file_id)
+        except Exception as e:
+            print(f"❌ Failed to get file: {e}")
+            bot.edit_message_text(error_text("File Error", 
+                "Failed to get file from Telegram. Please upload the file directly (not forwarded)."),
+                message.chat.id, prog_msg.message_id)
+            return
+        
         # Download file
-        f_info = bot.get_file(message.document.file_id)
-        file_content = bot.download_file(f_info.file_path)
+        try:
+            file_content = bot.download_file(f_info.file_path)
+        except Exception as e:
+            print(f"❌ Failed to download file: {e}")
+            bot.edit_message_text(error_text("Download Error", 
+                "Failed to download file. Please upload the file directly (not forwarded)."),
+                message.chat.id, prog_msg.message_id)
+            return
+        
         os.makedirs(DEPLOY_DIR, exist_ok=True)
         with open(f_path, 'wb') as f:
             f.write(file_content)
@@ -447,9 +530,20 @@ def process_upload(message):
         if f_name.endswith('.zip'):
             extract_dir = os.path.join(DEPLOY_DIR, f"{uid}_{f_name.replace('.zip', '')}")
             extract_dir = os.path.abspath(extract_dir)
-            with zipfile.ZipFile(f_path, 'r') as zip_ref:
-                zip_ref.extractall(extract_dir)
-            os.remove(f_path)
+            try:
+                with zipfile.ZipFile(f_path, 'r') as zip_ref:
+                    zip_ref.extractall(extract_dir)
+                os.remove(f_path)
+            except zipfile.BadZipFile:
+                bot.edit_message_text(error_text("Invalid ZIP", 
+                    "The file is not a valid ZIP archive."),
+                    message.chat.id, prog_msg.message_id)
+                return
+            except Exception as e:
+                bot.edit_message_text(error_text("Extract Error", 
+                    f"Failed to extract ZIP: {str(e)}"),
+                    message.chat.id, prog_msg.message_id)
+                return
             
             # Find main Python file
             main_file = None
@@ -462,8 +556,10 @@ def process_upload(message):
                     break
             
             if not main_file:
-                return bot.send_message(message.chat.id, error_text("Invalid ZIP", 
-                    "No Python (.py) file found in archive."))
+                bot.edit_message_text(error_text("Invalid ZIP", 
+                    "No Python (.py) file found in archive."),
+                    message.chat.id, prog_msg.message_id)
+                return
             
             final_path = os.path.abspath(main_file)
             final_name = os.path.basename(main_file)
@@ -471,13 +567,17 @@ def process_upload(message):
         
         # Verify it's a Python file
         if not final_name.endswith('.py'):
-            return bot.send_message(message.chat.id, error_text("Wrong Format", 
-                "❌ This bot only deploys <b>Python (.py)</b> files!"))
+            bot.edit_message_text(error_text("Wrong Format", 
+                "❌ This bot only deploys <b>Python (.py)</b> files!"),
+                message.chat.id, prog_msg.message_id)
+            return
         
         # Verify file exists
         if not os.path.exists(final_path):
-            return bot.send_message(message.chat.id, error_text("File Error", 
-                f"File not found: {final_path}"))
+            bot.edit_message_text(error_text("File Error", 
+                f"File not found: {final_path}"),
+                message.chat.id, prog_msg.message_id)
+            return
         
         # Install dependencies
         bot.edit_message_text(premium_text("⏳ Processing...", 
@@ -493,7 +593,6 @@ def process_upload(message):
         success, status = run_user_file(final_path, int(uid), final_name)
         
         if success:
-            # Update user data
             if final_name not in users_db[uid]['files']:
                 users_db[uid]['files'].append(final_name)
             users_db[uid]['points'] -= settings['hosting_cost']
@@ -600,7 +699,7 @@ def channel(message):
 @bot.message_handler(func=lambda m: m.text == "✦ Support")
 def support(message):
     bot.send_message(message.chat.id, premium_text("📞 Support Center",
-        f"👤 Owner: @MRANONIMOUS01\n📢 Channel: {CHANNEL_ID}\n\n💡 Python bot only!", "💬"))
+        f"👤 Owner: @P_bots_owner\n📢 Channel: {CHANNEL_ID}\n\n💡 Python bot only!", "💬"))
 
 @bot.message_handler(func=lambda m: m.text == "✦ More Bots")
 def more_bots(message):
@@ -622,10 +721,6 @@ sᴛᴀᴛᴜs :  ᴏɴʟɪɴᴇ 🟢   ᴏғғʟɪɴᴇ 🔴
 
 ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮
  <a href="https://t.me/Premiun_Cloud_Hosting_Js_Robot">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴊs┈</a>  🟢
-╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯
-
-╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮
- <a href="https://t.me/PREMIUM_VPS_BOT_HOSTING_ROBOT">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ʙᴏᴛs</a>  🟢
 ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯
 
 ═════════════════
@@ -661,6 +756,8 @@ def admin_keyboard():
     markup = types.InlineKeyboardMarkup(row_width=2)
     m_text = "🔴 Maintenance ON" if settings['maintenance'] else "🟢 Maintenance OFF"
     notify_text = "🔔 Notify ON" if settings.get('new_user_notify', True) else "🔕 Notify OFF"
+    force_text = "🔒 Force Join ON" if settings.get('force_join', True) else "🔓 Force Join OFF"
+    
     buttons = [
         ("➕ Add Points", "adm_add_pts"),
         ("🌍 Global Add Points", "adm_global_add_pts"),
@@ -669,6 +766,8 @@ def admin_keyboard():
         ("💾 Backup", "adm_backup"),
         (m_text, "adm_toggle_maint"),
         (notify_text, "adm_toggle_notify"),
+        (force_text, "adm_toggle_force"),
+        ("📋 Manage Channels", "adm_manage_channels"),
         ("🖥 Server Stats", "adm_stats"),
         ("🧹 Clean Bots", "adm_clean"),
         ("📊 System Info", "adm_system")
@@ -709,6 +808,27 @@ def admin_all_files(message):
 def callback_handler(call):
     uid = str(call.from_user.id)
     data = call.data
+    
+    # Force Join Check
+    if data == "check_join":
+        if check_force_join(uid):
+            bot.answer_callback_query(call.id, "✅ All channels joined!")
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+            # Send welcome message
+            welcome_text = f"""
+<b>🐍 ᴘʏᴛʜᴏɴ ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ✦</b>
+<b>🌐 24/7 ᴘʏᴛʜᴏɴ ᴄʟᴏᴜᴅ ᴅᴇᴘʟᴏʏᴍᴇɴᴛ</b>
+
+━━━━━━━━━━━━━━━━━━━━
+
+<b>👋 ᴡᴇʟᴄᴏᴍᴇ! You're verified!</b>
+
+💡 ᴜsᴇ ʙᴜᴛᴛᴏɴs ʙᴇʟᴏᴡ!"""
+            bot.send_message(call.message.chat.id, premium_text("✅ ᴠᴇʀɪғɪᴇᴅ", welcome_text, "🐍"), 
+                           reply_markup=main_keyboard(uid))
+        else:
+            bot.answer_callback_query(call.id, "❌ Please join all channels first!", show_alert=True)
+        return
     
     if data.startswith("viewlog_"):
         try:
@@ -799,6 +919,19 @@ def callback_handler(call):
             save_settings()
             bot.answer_callback_query(call.id, f"Notifications: {'ON' if settings['new_user_notify'] else 'OFF'}")
             bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=admin_keyboard())
+            
+        elif data == "adm_toggle_force":
+            settings['force_join'] = not settings.get('force_join', True)
+            save_settings()
+            bot.answer_callback_query(call.id, f"Force Join: {'ON' if settings['force_join'] else 'OFF'}")
+            bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=admin_keyboard())
+            
+        elif data == "adm_manage_channels":
+            channel_list = "📋 <b>Current Channels:</b>\n\n"
+            for i, ch in enumerate(FORCE_JOIN_CHANNELS):
+                channel_list += f"{i+1}. {ch['name']}\n   {ch['link']}\n\n"
+            bot.send_message(call.message.chat.id, premium_text("📋 ᴍᴀɴᴀɢᴇ ᴄʜᴀɴɴᴇʟs",
+                f"{channel_list}\n\n<code>Edit FORCE_JOIN_CHANNELS in the code to add/remove channels.</code>", "📢"))
             
         elif data == "adm_broadcast":
             msg = bot.send_message(call.message.chat.id, premium_text("📢 Broadcast", "Send your message below:", "📨"))
