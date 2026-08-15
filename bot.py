@@ -25,8 +25,8 @@ CHANNEL_ID = "@MRANONIMOUS01"
 # Add your channels here: { "name": "Channel Name", "link": "https://t.me/username" }
 FORCE_JOIN_CHANNELS = [
     {"name": "ᴍᴀɪɴ ᴄʜᴀɴɴᴇʟ", "link": "https://t.me/MRANONIMOUS01"},
-    {"name": "ʟᴏɴᴇʀ ᴅᴏᴍᴀɪɴ", " https://t.me/lordtarrificterritory"},
-    {"name": "ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ᴜᴘᴅᴀᴛᴇs", "https://t.me/PREMIUM_BOT_HOSTING_UPDATE"}
+    {"name": "ʟᴏɴᴇʀ ᴅᴏᴍᴀɪɴ", "link": "https://t.me/lordtarrificterritory"},
+    {"name": "ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ᴜᴘᴅᴀᴛᴇs", "link" "https://t.me/PREMIUM_BOT_HOSTING_UPDATE"}
 ]
 
 bot = telebot.TeleBot(API_TOKEN, parse_mode='HTML')
