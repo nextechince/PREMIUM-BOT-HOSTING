@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 # --- Configuration ---
-API_TOKEN = os.environ.get('TOKEN') or '8929639690:AAEwBtfMd9K8kfq2SF3veyNIlvC9HpYwrXY'
+API_TOKEN = os.environ.get('TOKEN') or '8928335304:AAFnShZwxZdkVL9NIgqwA0Kt1LdnWzJHRc8'
 ADMIN_ID = 7158115683
 CHANNEL_ID = "@MRANONIMOUS01" 
 bot = telebot.TeleBot(API_TOKEN, parse_mode='HTML')
