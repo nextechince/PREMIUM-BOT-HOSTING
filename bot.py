@@ -357,7 +357,7 @@ def start(message):
     
     welcome_text = f"""
 <b>⚡ ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ✦</b>
-<b>🌐 24/7 ᴘʏᴛʜᴏɴ & ᴊs ᴄʟᴏᴜᴅ ᴅᴇᴘʟᴏʏᴍᴇɴᴛ</b>
+<b>🌐 24/7 ᴘʏᴛʜᴏɴ ᴄʟᴏᴜᴅ ᴅᴇᴘʟᴏʏᴍᴇɴᴛ</b>
 
 ━━━━━━━━━━━━━━━━━━━━
 
@@ -384,7 +384,7 @@ def start(message):
 def main_keyboard(user_id):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     buttons = [
-        "✦ Deploy Py", "✦ Deploy JS",
+        "✦ Deploy Py",
         "✦ My Files", "✦ Points",
         "✦ Stats", "✦ Referral",
         "✦ Logs", "✦ Channel",
@@ -618,11 +618,11 @@ sᴛᴀᴛᴜs :  ᴏɴʟɪɴᴇ 🟢   ᴏғғʟɪɴᴇ 🔴
 ═════════════════   
  
 ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮
- <a href="https://t.me/YOUR_PYTHON_BOT">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴘʏ┈</a> 🟢
+ <a href="@PREMIUM_COULD_HOSTING_PY_BOT">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴘʏ┈</a> 🟢
 ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯
 
 ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮
- <a href="https://t.me/YOUR_JS_BOT">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴊs┈</a>  🟢
+ <a href="http://t.me/Premiun_Cloud_Hosting_Js_Robot">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴊs┈</a>  🟢
 ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯
 
 ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮
