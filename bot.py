@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 # --- Configuration ---
-API_TOKEN = '8758264160:AAEgWrfmFMCU0dedIiZoK-kQb9R5dAixcCI'
+API_TOKEN = os.environ.get('TOKEN') or '8758264160:AAEgWrfmFMCU0dedIiZoK-kQb9R5dAixcCI'
 ADMIN_ID = 7158115683
 CHANNEL_ID = "@MRANONIMOUS01" 
 bot = telebot.TeleBot(API_TOKEN, parse_mode='HTML')
@@ -27,6 +27,7 @@ SETTINGS_FILE = "bot_settings.json"
 DEPLOY_DIR = "deployed_bots"
 LOGS_DIR = "bot_logs"
 
+# Create directories
 for dir_name in [DEPLOY_DIR, LOGS_DIR]:
     Path(dir_name).mkdir(exist_ok=True)
 
@@ -140,8 +141,8 @@ def notify_admin_new_user(user_id, user_name, username=None, referrer=None):
     except:
         return False
 
-# --- Hosting Logic ---
-def install_python_dependencies(file_path, user_id, f_name):
+# --- PYTHON ONLY Hosting Logic ---
+def install_dependencies(file_path, user_id, f_name):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -168,33 +169,21 @@ def install_python_dependencies(file_path, user_id, f_name):
     except:
         return [], []
 
-def install_node_dependencies(dir_path, user_id, file_name):
-    try:
-        package_json = os.path.join(dir_path, 'package.json')
-        if os.path.exists(package_json):
-            result = subprocess.run(['npm', 'install', '--production', '--silent'],
-                                   cwd=dir_path, capture_output=True, timeout=60)
-            if result.returncode == 0:
-                return True, "Node dependencies installed"
-            else:
-                return False, "Failed to install Node dependencies"
-        return True, "No package.json found"
-    except:
-        return False, "Error installing Node dependencies"
-
 def run_user_file(f_path, user_id, f_name):
+    # Check if file exists
     if not os.path.exists(f_path):
-        bot.send_message(user_id, error_text("File Error", f"<code>File not found</code>"))
+        error_msg = f"File not found: {f_path}"
+        log_error(error_msg, user_id)
+        bot.send_message(user_id, error_text("File Error", f"<code>{error_msg}</code>"))
         return False, "File not found"
     
     ext = os.path.splitext(f_name)[1].lower()
     
-    if ext == '.py':
-        cmd = [sys.executable, f_path]
-    elif ext == '.js':
-        cmd = ['node', f_path]
-    else:
-        return False, "Unsupported file type"
+    # PYTHON ONLY - Only accept .py files
+    if ext != '.py':
+        bot.send_message(user_id, error_text("Wrong Bot", 
+            "This bot only deploys <b>Python (.py)</b> files.\nUse the JS bot for JavaScript files."))
+        return False, "Wrong bot - Use JS bot"
     
     try:
         log_file = os.path.join(LOGS_DIR, f"{user_id}_{f_name.replace('.','_')}.log")
@@ -202,10 +191,11 @@ def run_user_file(f_path, user_id, f_name):
             lf.write(f"=== Bot Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===\n")
             lf.write(f"User ID: {user_id}\n")
             lf.write(f"File: {f_name}\n")
+            lf.write(f"Path: {f_path}\n")
             lf.write("="*50 + "\n\n")
         
         process = subprocess.Popen(
-            cmd,
+            [sys.executable, f_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -234,15 +224,10 @@ def run_user_file(f_path, user_id, f_name):
                 del running_processes[f_path]
             return False, "Runtime error"
         
-        bot_type = "🐍 Python" if ext == '.py' else "🟢 JavaScript"
         bot.send_message(user_id, success_text("Bot Deployed", 
-            f"📄 <b>File:</b> {f_name}\n🟢 <b>Status:</b> Running\n📊 <b>PID:</b> {process.pid}\n📂 <b>Type:</b> {bot_type}"))
+            f"📄 <b>File:</b> {f_name}\n🟢 <b>Status:</b> Running\n📊 <b>PID:</b> {process.pid}\n🐍 <b>Type:</b> Python"))
         return True, "Running"
         
-    except FileNotFoundError:
-        error_msg = "Node.js is not installed" if ext == '.js' else "Python error"
-        bot.send_message(user_id, error_text("Execution Error", f"<code>{error_msg}</code>"))
-        return False, error_msg
     except Exception as e:
         bot.send_message(user_id, error_text("Server Error", f"<code>{str(e)}</code>"))
         return False, str(e)
@@ -276,7 +261,7 @@ def stop_bot(f_path):
     return False
 
 # --- Channel Announcement ---
-def announce_deployment(user_id, file_name, bot_type="🐍 Python"):
+def announce_deployment(user_id, file_name):
     try:
         user = bot.get_chat(user_id)
         user_name = user.first_name or "User"
@@ -295,7 +280,7 @@ def announce_deployment(user_id, file_name, bot_type="🐍 Python"):
 📄 <b>ғɪʟᴇ:</b> {file_name}
 🕐 <b>ᴛɪᴍᴇ:</b> {timestamp}
 ⚡ <b>sᴛᴀᴛᴜs:</b> 🟢 ʀᴜɴɴɪɴɢ
-📂 <b>ᴛʏᴘᴇ:</b> {bot_type}</blockquote>
+📂 <b>ᴛʏᴘᴇ:</b> 🐍 ᴘʏᴛʜᴏɴ</blockquote>
 
 <blockquote>━━━━━━━━━━━━━━━━━━━━━━━
 🎯 <b>🄳🄴🄿🄻🄾🅈 🅄🅁🅂 🄽🄾🅆</b>
@@ -356,7 +341,7 @@ def start(message):
     points = user_data.get('points', 0)
     
     welcome_text = f"""
-<b>⚡ ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ✦</b>
+<b>🐍 ᴘʏᴛʜᴏɴ ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ✦</b>
 <b>🌐 24/7 ᴘʏᴛʜᴏɴ ᴄʟᴏᴜᴅ ᴅᴇᴘʟᴏʏᴍᴇɴᴛ</b>
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -370,7 +355,7 @@ def start(message):
 ━━━━━━━━━━━━━━━━━━━━━
 
 <b>✨ ғᴇᴀᴛᴜʀᴇs:</b>
-• 📤 ᴅᴇᴘʟᴏʏ ᴘʏᴛʜᴏɴ (.py) ᴀɴᴅ ᴊs (.js)
+• 📤 ᴅᴇᴘʟᴏʏ ᴘʏᴛʜᴏɴ (.py) ᴏɴʟʏ
 • 🚀 ᴀᴜᴛᴏ ᴅᴇᴘᴇɴᴅᴇɴᴄɪᴇs
 • 🔍 ʀᴇᴀʟ-ᴛɪᴍᴇ ʟᴏɢs
 • ⚡ 24/7 ᴜᴘᴛɪᴍᴇ
@@ -378,18 +363,17 @@ def start(message):
 💡 ᴜsᴇ ʙᴜᴛᴛᴏɴs ʙᴇʟᴏᴡ!
 """
     
-    bot.send_message(message.chat.id, premium_text("ᴡᴇʟᴄᴏᴍᴇ", welcome_text, "⚡"), 
+    bot.send_message(message.chat.id, premium_text("ᴡᴇʟᴄᴏᴍᴇ", welcome_text, "🐍"), 
                      reply_markup=main_keyboard(uid))
 
 def main_keyboard(user_id):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     buttons = [
-        "✦ Deploy Py",
-        "✦ My Files", "✦ Points",
-        "✦ Stats", "✦ Referral",
-        "✦ Logs", "✦ Channel",
-        "✦ Support", "✦ More Bots",
-        "✦ Daily"
+        "✦ Deploy Py", "✦ My Files",
+        "✦ Points", "✦ Stats",
+        "✦ Referral", "✦ Logs",
+        "✦ Channel", "✦ Support", 
+        "✦ More Bots", "✦ Daily"
     ]
     row = []
     for i, btn in enumerate(buttons):
@@ -404,60 +388,45 @@ def main_keyboard(user_id):
     return markup
 
 @bot.message_handler(func=lambda m: m.text == "✦ Deploy Py")
-def deploy_python(message):
+def deploy_bot(message):
     uid = str(message.from_user.id)
     points = users_db.get(uid, {}).get('points', 0)
     cost = settings['hosting_cost']
     
     if points < cost:
         return bot.send_message(message.chat.id, premium_text("💎 Insufficient Points",
-            f"💰 Balance: {points} pts\n💎 Required: {cost} pts"))
+            f"💰 Balance: {points} pts\n💎 Required: {cost} pts\n\n💡 Invite friends to earn more!"))
     
     msg = bot.send_message(message.chat.id, premium_text("📤 Deploy Python Bot",
-        f"📂 Supported: .py, .zip\n💰 Cost: {cost} pts\n💎 Balance: {points} pts", "🐍"))
-    bot.register_next_step_handler(msg, lambda m: process_upload(m, 'python'))
+        f"📂 Supported: .py, .zip\n💰 Cost: {cost} pts\n💎 Balance: {points} pts\n\n📌 <b>Python only!</b>", "🐍"))
+    bot.register_next_step_handler(msg, process_upload)
 
-@bot.message_handler(func=lambda m: m.text == "✦ Deploy JS")
-def deploy_js(message):
-    uid = str(message.from_user.id)
-    points = users_db.get(uid, {}).get('points', 0)
-    cost = settings['hosting_cost']
-    
-    if points < cost:
-        return bot.send_message(message.chat.id, premium_text("💎 Insufficient Points",
-            f"💰 Balance: {points} pts\n💎 Required: {cost} pts"))
-    
-    msg = bot.send_message(message.chat.id, premium_text("📤 Deploy JavaScript Bot",
-        f"📂 Supported: .js, .zip\n💰 Cost: {cost} pts\n💎 Balance: {points} pts", "🟢"))
-    bot.register_next_step_handler(msg, lambda m: process_upload(m, 'javascript'))
-
-def process_upload(message, bot_type):
+def process_upload(message):
     if not message.document:
         return bot.send_message(message.chat.id, error_text("No File", "Please send a valid file."))
     
     uid = str(message.from_user.id)
-    f_name = message.document.file_name
-    f_path = os.path.join(DEPLOY_DIR, f"{uid}_{f_name}")
+    original_fname = message.document.file_name
+    f_name = original_fname
     
-    if bot_type == 'python':
-        valid_extensions = ['.py', '.zip']
-        expected_ext = '.py'
-        bot_emoji = "🐍"
-        bot_name = "Python"
-    else:
-        valid_extensions = ['.js', '.zip']
-        expected_ext = '.js'
-        bot_emoji = "🟢"
-        bot_name = "JavaScript"
+    # FIXED: Use simple join - NO normpath
+    safe_filename = f"{uid}_{f_name}"
+    f_path = os.path.join(DEPLOY_DIR, safe_filename)
     
+    print(f"📥 Upload: {f_name}")
+    print(f"📁 Saving to: {f_path}")
+    
+    # PYTHON ONLY
+    valid_extensions = ['.py', '.zip']
     if not any(f_name.lower().endswith(ext) for ext in valid_extensions):
         return bot.send_message(message.chat.id, error_text("Wrong Format",
-            f"❌ Use <b>✦ Deploy {bot_name}</b> for {bot_name} (.{expected_ext[1:]}) files!"))
+            f"❌ This bot only deploys <b>Python (.py)</b> files!\nSupported: {', '.join(valid_extensions)}\n\nUse the JS bot for JavaScript files."))
     
     prog_msg = bot.send_message(message.chat.id, premium_text("⏳ Processing...", 
-        f"📦 File: {f_name}\n📂 Type: {bot_name}", "⚙️"))
+        f"📦 File: {f_name}\n⏳ Status: Uploading...", "⚙️"))
     
     try:
+        # Download file
         f_info = bot.get_file(message.document.file_id)
         file_content = bot.download_file(f_info.file_path)
         os.makedirs(DEPLOY_DIR, exist_ok=True)
@@ -467,19 +436,19 @@ def process_upload(message, bot_type):
         final_path = f_path
         final_name = f_name
         
+        # Handle ZIP files
         if f_name.endswith('.zip'):
+            # FIXED: Clean extract directory name
             extract_dir = os.path.join(DEPLOY_DIR, f"{uid}_{f_name.replace('.zip', '')}")
             with zipfile.ZipFile(f_path, 'r') as zip_ref:
                 zip_ref.extractall(extract_dir)
             os.remove(f_path)
             
+            # Find main Python file
             main_file = None
             for root, dirs, files in os.walk(extract_dir):
                 for file in files:
-                    if bot_type == 'python' and file.endswith('.py'):
-                        main_file = os.path.join(root, file)
-                        break
-                    elif bot_type == 'javascript' and file.endswith('.js'):
+                    if file.endswith('.py'):
                         main_file = os.path.join(root, file)
                         break
                 if main_file:
@@ -487,21 +456,37 @@ def process_upload(message, bot_type):
             
             if not main_file:
                 return bot.send_message(message.chat.id, error_text("Invalid ZIP", 
-                    f"No {bot_name} (.{expected_ext[1:]}) file found."))
+                    "No Python (.py) file found in archive."))
             
             final_path = main_file
             final_name = os.path.basename(main_file)
+            print(f"📦 Extracted: {final_path}")
+        
+        # Verify it's a Python file
+        if not final_name.endswith('.py'):
+            return bot.send_message(message.chat.id, error_text("Wrong Format", 
+                "❌ This bot only deploys <b>Python (.py)</b> files!"))
+        
+        # Verify file exists
+        if not os.path.exists(final_path):
+            return bot.send_message(message.chat.id, error_text("File Error", 
+                f"File not found: {final_path}"))
         
         # Install dependencies
-        if bot_type == 'python':
-            installed, failed = install_python_dependencies(final_path, uid, final_name)
-        else:
-            dir_path = os.path.dirname(final_path)
-            success, msg = install_node_dependencies(dir_path, uid, final_name)
+        bot.edit_message_text(premium_text("⏳ Processing...", 
+            f"📦 Installing Python dependencies...", "⚙️"), message.chat.id, prog_msg.message_id)
+        installed, failed = install_dependencies(final_path, uid, final_name)
         
+        if installed:
+            bot.edit_message_text(premium_text("⏳ Processing...", 
+                f"✅ Installed: {', '.join(installed)}", "⚙️"), 
+                message.chat.id, prog_msg.message_id)
+        
+        # Run the bot
         success, status = run_user_file(final_path, int(uid), final_name)
         
         if success:
+            # Update user data
             if final_name not in users_db[uid]['files']:
                 users_db[uid]['files'].append(final_name)
             users_db[uid]['points'] -= settings['hosting_cost']
@@ -512,7 +497,7 @@ def process_upload(message, bot_type):
                 f"📄 File: {final_name}\n🟢 Status: Running\n💰 Remaining: {users_db[uid]['points']} pts"),
                 message.chat.id, prog_msg.message_id)
             
-            announce_deployment(int(uid), final_name, f"{bot_emoji} {bot_name}")
+            announce_deployment(int(uid), final_name)
         else:
             bot.edit_message_text(error_text("Deployment Failed", 
                 f"📄 File: {final_name}\n❌ Status: {status}"), message.chat.id, prog_msg.message_id)
@@ -522,20 +507,27 @@ def process_upload(message, bot_type):
         bot.edit_message_text(error_text("Deployment Error", f"❌ {str(e)}"), 
                              message.chat.id, prog_msg.message_id)
 
+# --- Rest of handlers ---
 @bot.message_handler(func=lambda m: m.text == "✦ My Files")
 def show_my_files(message):
     uid = str(message.from_user.id)
     files = users_db.get(uid, {}).get('files', [])
     
     if not files:
-        return bot.send_message(message.chat.id, info_text("📂 No Files", "Use <b>✦ Deploy Py</b> or <b>✦ Deploy JS</b> to get started!"))
+        return bot.send_message(message.chat.id, info_text("📂 No Files", "Use <b>✦ Deploy Py</b> to get started!"))
     
     for f_name in files:
+        # FIXED: Use simple join
         f_path = os.path.join(DEPLOY_DIR, f"{uid}_{f_name}")
         is_running = f_path in running_processes and running_processes[f_path]['process'].poll() is None
         status = "🟢 Running" if is_running else "🔴 Stopped"
         pid = running_processes[f_path]['pid'] if is_running else "N/A"
-        bot_type = "🐍 Python" if f_name.endswith('.py') else "🟢 JavaScript"
+        
+        runtime = ""
+        if is_running:
+            start_time = running_processes[f_path]['start_time']
+            minutes = int((datetime.now() - start_time).total_seconds() // 60)
+            runtime = f"⏱️ {minutes}m" if minutes < 60 else f"⏱️ {minutes//60}h {minutes%60}m"
         
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
@@ -549,7 +541,7 @@ def show_my_files(message):
         markup.add(types.InlineKeyboardButton("🗑️ Delete", callback_data=f"del_{f_name}_{uid}"))
         
         bot.send_message(message.chat.id, premium_text(f"📄 {f_name}", 
-            f"Status: {status}\nPID: {pid}\nType: {bot_type}", "🤖"), reply_markup=markup)
+            f"Status: {status}\nPID: {pid}\n🐍 Python\n{runtime}", "🤖"), reply_markup=markup)
 
 @bot.message_handler(func=lambda m: m.text == "✦ Points")
 def show_points(message):
@@ -601,7 +593,7 @@ def channel(message):
 @bot.message_handler(func=lambda m: m.text == "✦ Support")
 def support(message):
     bot.send_message(message.chat.id, premium_text("📞 Support Center",
-        f"👤 Owner: @MRANONIMOUS01\n📢 Channel: {CHANNEL_ID}", "💬"))
+        f"👤 Owner: @MRANONIMOUS01\n📢 Channel: {CHANNEL_ID}\n\n💡 Python bot only!", "💬"))
 
 @bot.message_handler(func=lambda m: m.text == "✦ More Bots")
 def more_bots(message):
@@ -618,11 +610,11 @@ sᴛᴀᴛᴜs :  ᴏɴʟɪɴᴇ 🟢   ᴏғғʟɪɴᴇ 🔴
 ═════════════════   
  
 ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮
- <a href="@PREMIUM_COULD_HOSTING_PY_BOT">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴘʏ┈</a> 🟢
+ <a href="https://t.me/PREMIUM_COULD_HOSTING_PY_BOT">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴘʏ┈</a> 🟢
 ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯
 
 ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮
- <a href="http://t.me/Premiun_Cloud_Hosting_Js_Robot">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴊs┈</a>  🟢
+ <a href="https://t.me/Premiun_Cloud_Hosting_Js_Robot">ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ┈ᴊs┈</a>  🟢
 ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯
 
 ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮
@@ -682,7 +674,7 @@ def admin_keyboard():
 
 @bot.message_handler(func=lambda m: m.text == "✦ All Files" and str(m.from_user.id) == str(ADMIN_ID))
 def admin_all_files(message):
-    bot.send_message(message.chat.id, premium_text("🌍 Global File Control", "Managing all deployed bots", "🔍"))
+    bot.send_message(message.chat.id, premium_text("🌍 Global File Control", "Managing all deployed Python bots", "🔍"))
     found = False
     for target_uid, data in users_db.items():
         for f_name in data.get('files', []):
@@ -905,12 +897,12 @@ def save_video_logic(message):
 # --- Start Bot ---
 if __name__ == "__main__":
     print("=" * 60)
-    print("⚡ PREMIUM HOSTING BOT (Python + JS)")
+    print("🐍 PYTHON PREMIUM HOSTING BOT v2.0")
     print("=" * 60)
     print(f"🕐 Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"👥 Users: {len(users_db)}")
     print("=" * 60)
-    print("✅ Bot is running...")
+    print("✅ Python bot is running...")
     print("=" * 60)
     
     try:
