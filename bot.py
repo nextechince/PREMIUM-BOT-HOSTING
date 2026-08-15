@@ -26,7 +26,7 @@ CHANNEL_ID = "@MRANONIMOUS01"
 FORCE_JOIN_CHANNELS = [
     {"name": "ᴍᴀɪɴ ᴄʜᴀɴɴᴇʟ", "link": "https://t.me/MRANONIMOUS01"},
     {"name": "ʟᴏɴᴇʀ ᴅᴏᴍᴀɪɴ", "link": "https://t.me/lordtarrificterritory"},
-    {"name": "ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ᴜᴘᴅᴀᴛᴇs", "link" "https://t.me/PREMIUM_BOT_HOSTING_UPDATE"}
+    {"name": "ᴘʀᴇᴍɪᴜᴍ ᴄʟᴏᴜᴅ ʜᴏsᴛɪɴɢ ᴜᴘᴅᴀᴛᴇs", "link": "https://t.me/PREMIUM_BOT_HOSTING_UPDATE"}
 ]
 
 bot = telebot.TeleBot(API_TOKEN, parse_mode='HTML')
